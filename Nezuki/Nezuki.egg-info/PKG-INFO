@@ -1,0 +1,38 @@
+Metadata-Version: 2.2
+Name: Nezuki
+Version: 0.1.0
+Summary: Un pacchetto di moduli che implementa funzionalità relative all'Home Server e gestione dei servizi forniti dalla Domotica. I moduli forniti anche se usati dal server della domotica possono essere utilizzati in qualsiasi ambito se il loro utilizzo rispechcia pienamente le necessità.
+Home-page: https://github.com/KingKaitoKid/Nezuki
+Author: Sergio Catacci
+Author-email: sergio.catacci@icloud.com
+Project-URL: Bug Reports, https://github.com/KingKaitoKid/Nezuki/issues
+Project-URL: Source, https://github.com/KingKaitoKid/Nezuki
+Keywords: nezuki database http requests request
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: cloudflare
+Requires-Dist: colorama
+Requires-Dist: Flask
+Requires-Dist: Flask_Cors
+Requires-Dist: jsonpath_ng
+Requires-Dist: PyYAML
+Requires-Dist: requests
+Requires-Dist: mysql-connector-python
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: project-url
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# Nezuki
+Un pacchetto di moduli che implementa funzionalità relative all'Home Server e gestione dei servizi forniti dalla Domotica. I moduli forniti anche se usati dal server della domotica possono essere utilizzati in qualsiasi ambito se il loro utilizzo rispechcia pienamente le necessità.

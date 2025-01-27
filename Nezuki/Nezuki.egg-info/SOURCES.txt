@@ -1,0 +1,13 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+../LICENSE
+../README.md
+Nezuki.egg-info/PKG-INFO
+Nezuki.egg-info/SOURCES.txt
+Nezuki.egg-info/dependency_links.txt
+Nezuki.egg-info/requires.txt
+Nezuki.egg-info/top_level.txt
+TMDB/TMDB.py
+TMDB/__init__.py
