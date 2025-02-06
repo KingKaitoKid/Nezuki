@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='Nezuki',  # Nome del pacchetto
-    version='0.1.0',  # Versione iniziale
+    version='1.0.0',
     author='Sergio Catacci',  # Autore del pacchetto
     author_email='sergio.catacci@icloud.com',  # Email dell'autore
     description='Un pacchetto di moduli che implementa funzionalità relative all\'Home Server e gestione dei servizi forniti dalla Domotica. I moduli forniti anche se usati dal server della domotica possono essere utilizzati in qualsiasi ambito se il loro utilizzo rispechcia pienamente le necessità.',
