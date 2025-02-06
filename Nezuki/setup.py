@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='Nezuki',  # Nome del pacchetto
-    version='1.0.0',
+    version='1.0.1',
     author='Sergio Catacci',  # Autore del pacchetto
     author_email='sergio.catacci@icloud.com',  # Email dell'autore
     description='Un pacchetto di moduli che implementa funzionalità relative all\'Home Server e gestione dei servizi forniti dalla Domotica. I moduli forniti anche se usati dal server della domotica possono essere utilizzati in qualsiasi ambito se il loro utilizzo rispechcia pienamente le necessità.',
@@ -25,7 +25,7 @@ setup(
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.6',
-    keywords='nezuki database http requests request',  # Parole chiave per la ricerca
+    keywords='nezuki',  # Parole chiave per la ricerca
     project_urls={
         'Bug Reports': 'https://github.com/KingKaitoKid/Nezuki/issues',
         'Source': 'https://github.com/KingKaitoKid/Nezuki',

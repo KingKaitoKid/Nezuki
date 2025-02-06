@@ -8,7 +8,7 @@ from commonLogId import *
 from Common import *
 from JsonManager import JsonManager
 
-@versione("1.0.0")
+@versione("1.1.0")
 class Database:
     """ Crea la connessione al Database e permette di eseguire qualsiasi query safe e non safe """
 
@@ -149,3 +149,7 @@ class Database:
         """ Chiude la connessione al DB alla distruzione o cancellazione di questo oggetto """
         self.connection.close
         self.logger.debug(f"Terminazione connessione SQL")
+        
+
+# dd = Database("", "DEV")
+# dd.test_db_connection()

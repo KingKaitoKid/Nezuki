@@ -3,7 +3,7 @@ import requests
 from Common import *
 from commonLogId import *
 
-@versione("1.0.0")
+@versione("1.0.7")
 class Http:
     # Fare una generale review di questo modulo
 
