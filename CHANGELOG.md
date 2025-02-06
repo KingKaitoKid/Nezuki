@@ -7,23 +7,28 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
 ---
 
 ## [Unreleased]
-### Added
-- (Nessun nuovo componente aggiunto)
+### Overview
+- **Added:**
+  - Nuovo modulo TMDB per futura integrazione (previsto rilascio in versione 2.5.0).
+- **Changed:**
+  - **BREAKING CHANGE** La connessione al DB deve essere passata esplicitamente mediante funzione `connection_params` per rimozione file property
+- **Deprecated:**
+  - Il modulo Common è stato rimosso; le funzioni correlate sono state spostate in `Nezuki/versioning.py`.
+- **Fixed:**
+  - Il comportamento di `import *` ora include tutti i moduli di Nezuki.
+- **Security:**
+  - Niente di specifico da riportare
 
-### Changed
-- (Nessun cambiamento apportato)
+<details>
+  <summary>Dettagli specifici per Moduli</summary>
 
-### Deprecated
-- (Nessuna deprecazione aggiunta)
+### Database
+- **Removed:**
+  - Dipendenza dal file property; La connessione al DB deve essere passata esplicitamente mediante funzione `connection_params`
+  - Dipendenza dall'`env`
+  - Dipendenza del logger
 
-### Removed
-- (Nessun componente rimosso al momento)
-
-### Fixed
-- (Nessuna fix apportata)
-
-### Security
-- Nessun aggiornamento di sicurezza rilevante.
+</details>
 
 ---
 
@@ -54,7 +59,7 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
     21. TelegramParser
     22. Telegram
     23. WebLogsViewer
-    24. YamlManager.
+    24. YamlManager
 
 ### Changed
 - Nessuna modifica rispetto alla versione iniziale (release as-is).
