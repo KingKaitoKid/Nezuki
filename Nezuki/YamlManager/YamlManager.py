@@ -1,8 +1,6 @@
-from Common import *
 from JsonManager import JsonManager
 import yaml
 
-@versione("1.0.0")
 class YamlManager:
     '''
         Questa classe serve per gestire un yaml file.
@@ -15,9 +13,11 @@ class YamlManager:
         """
             Legge il file da path assoluto e torna il contenuto del file in un JSON decodificato.
 
-            Input:
-
+            Args:
                 path: Path asosluto del file YAML da leggere
+
+            Returns:
+                dict: Torna il contenuto YAML nel formato JSON
         """
         try:
             with open(path, "r") as f:

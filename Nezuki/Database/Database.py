@@ -2,23 +2,18 @@ from re import S
 import typing
 import mysql.connector
 import psycopg2, psycopg2.extras
-from File import File
-import os
-from commonLogId import *
-from Common import *
-from JsonManager import JsonManager
 
-@versione("1.1.0")
 class Database:
-    """ Crea la connessione al Database e permette di eseguire qualsiasi query safe e non safe """
+    """
+    Crea la connessione al Database e permette di eseguire qualsiasi query safe e non safe.
 
-    env: str 
-    """ Ambiente di esecuzione, se vuoto verrà preso in considerazione l'env del server """
-
-    fileConfig: File
-    """ Gestore dei file e property.
-     
-      Vedere `.File` """
+    Attributes:
+        database (str): Nome del database a cui connettersi.
+        connection: Connessione persistente al DB (istanza di mysql.connector.MySQLConnection o psycopg2 connection).
+        db_type (str): Tipo di database, 'mysql' o 'postgresql'.
+        auto_load (bool): Se True, la connessione viene caricata automaticamente.
+        errorDBConnection (bool): Flag per indicare errori di connessione.
+    """
 
     database: str
     """ Nome del Database al quale ci si vuole collegare"""
@@ -29,24 +24,30 @@ class Database:
     configJSON: dict
     """ INTERNAL: Confgiruazioni di connessione al DB """
     
-    def __init__(self, env: str = "", database: str = "monitoring", db_type: typing.Literal["mysql", "postgresql"] = "mysql") -> None:
-        """ Inizializza l'oggetto Database, se env è vuoto verrà considerato l'env definito sul server """
-        self.logger = get_logger()
-        if env == "":
-            env = os.getenv("env")
-        self.env = env
+    def __init__(self, database: str = "monitoring", db_type: typing.Literal["mysql", "postgresql"] = "mysql") -> None:
+        """ Inizializza l'oggetto Database.
+
+        Args:
+            database (str): Il nome del database (default "monitoring").
+            db_type (str): Il tipo di database ("mysql" o "postgresql", default "mysql").
+        """
         self.database = database
         self.db_type = db_type.lower()
-        self.auto_load = True
+        self.auto_load = False
         self.errorDBConnection = False
-        self.load_configuration()
 
     def connection_params(self, host: str, user: str, password: str) -> dict:
-        """ Permette di passare manualmente la connessione al DB  """
-        if self.errorDBConnection:
-            self.logger.debug("Rilevato tentativo in errore di connessione mediante property, verrà usata la configurazione manuale")
-        else:
-            self.logger.warning("Connessione con le property è andato in OK, tale connessione verrà chiusa e aperta la nuova usando i parametri manuali.")
+        """
+        Configura manualmente i parametri di connessione al database.
+
+        Args:
+            host (str): Indirizzo del server DB.
+            user (str): Nome utente per la connessione.
+            password (str): Password per la connessione.
+
+        Returns:
+            dict: I parametri di connessione impostati (potresti voler ritornare il dizionario o semplicemente aggiornare l'oggetto).
+        """
         self.auto_load = False
         self.configJSONNew: dict = {
             "database": self.database,
@@ -54,58 +55,51 @@ class Database:
             "user": user,
             "password": password
         }
-        if not self.errorDBConnection:
-            self.connection.close
         try:
             self.connection = self.start_connection()
             self.errorDBConnection = False
-            self.logger.info(f"Connessione al DB {self.db_type} con parametri manuali riuscita correttamente")
         except Exception as e:
-            self.logger.fatal("Impossibile connettersi al DB con i parametri manuali, controllare i parametri e/o connettività all'host")
             print(e)
-
-    
-    def load_configuration(self) -> None:
-        """ Carica le property per poter avviare una connessione, eseguita automaticamente appena si crea l'istanza """
-        
-        JsonM = JsonManager({})
-        self.configJSONNew: dict = JsonM.read_json(os.path.dirname(__file__) + "/properties.json")['DB'][self.env]
-        self.configJSONNew['database'] = self.database
-        try:
-            self.connection = self.start_connection()
-            self.logger.info("Connessione al DB riuscita mediante property")
-            self.errorDBConnection = False
-        except Exception as e:
-            self.errorDBConnection = True
-            self.logger.error("Connessione al DB Fallita mediante property, verificarle o passare manualmente i parametri con il metodo connection_params()")
-    
     
     def start_connection(self):
-        """ Avvia la connessione MySQL"""
-        self.logger.debug("Inizio connessione al DB")
+        """
+        Avvia la connessione al Database
+        """
         if self.db_type == "mysql":
             return mysql.connector.connect(**self.configJSONNew)
         elif self.db_type == "postgresql":
             return psycopg2.connect(**self.configJSONNew)
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
+        
     
     def __sanitize_string__(self, text: str) -> str:
+        """
+        Effettua una trim del testo passato in input.
+        
+        Args:
+            text (str): testo su cui applicare la trim
+            
+        Returns:
+            str: La stringa con la trim dagli spazi iniziali e finali"""
         to_ret: str = text.strip()
         return to_ret
     
     
     def doQuery(self, query: str, params = None) -> dict :
-        """ Esegue la query passata in input e torna un array di risultati.
+        """
+        Esegue una query sul database.
 
-            - Input:
-                - query: Query da eseguire, in caso di parametri usare %s
-                - params: Se presenti passare i parametri associati a %s in ordine, se è presente solo 1 parametro nella tupla mettere la virgola finale            
-            - Output: {"ok": Bool, "results": list(tuple(...)), "rows_affected": Int, "error": None|dict}
+        Args:
+            query (str): La query da eseguire. Se sono presenti parametri, utilizzare %s per placeholder.
+            params: Parametri da passare alla query, nel formato `tuple` e, in caso di un solo parametro, mettere la virgola dopo il primo elemento `tuple`
+
+        Returns:
+            dict: Un dizionario con la struttura:
+                  {"ok": Bool, "results": list, "rows_affected": int, "error": None|str, "lastrowid": Optional[int]}
         """
         if not self.errorDBConnection:
             query = self.__sanitize_string__(query)
-            self.logger.debug(f"Ricevuta istruzione di esecuzione query", extra={"details": f"query: {query}\nParams: {params}", "internal": True})
             result_dict: dict = {"ok": False, "results": [], "rows_affected": -1, "error": "Init phase..."}
             cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor) if self.db_type == "postgresql" else self.connection.cursor(buffered=True)
 
@@ -130,7 +124,6 @@ class Database:
                     rows = cursor.rowcount
                 ok: bool = True
                 result_dict = {"ok": ok, "results": results, "rows_affected": rows, "error": None, "lastrowid": lastrowid}
-                self.logger.debug(f"Query eseguita", extra={"esito_funzionale": 0, "details": f"Output: {result_dict}", "internal": True})
                 cursor.close()
             except Exception as e:
                 cursor.close()
@@ -138,18 +131,11 @@ class Database:
                 results = []
                 rows = -1
                 result_dict = {"ok": ok, "results": results, "rows_affected": rows, "error": str(e)}
-                self.logger.error(f"La query è fallita", extra={"esito_funzionale": 1, "details": f"Riultato: {result_dict}", "internal": True})
 
             return result_dict
         else:
-            self.logger.fatal("Impossibile eseguire la query perché la connessione al DB non è riuscita, verificare le property o passarli manualmente.")
             return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita"}        
     
     def __del__(self) -> None:
         """ Chiude la connessione al DB alla distruzione o cancellazione di questo oggetto """
         self.connection.close
-        self.logger.debug(f"Terminazione connessione SQL")
-        
-
-# dd = Database("", "DEV")
-# dd.test_db_connection()

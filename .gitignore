@@ -124,6 +124,9 @@ Desktop.ini
 # Linux specific
 *~
 
+# Root file test
+test_script.py
+
 # Ignore test directories
 tests/__pycache__/
 tests/*.py[cod]
