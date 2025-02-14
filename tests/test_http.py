@@ -1,5 +1,5 @@
 import pytest
-from nezuki.Http.Http import Http, MethodNotSupported, InsufficientInfo
+from nezuki.Http import Http, MethodNotSupported, InsufficientInfo
 
 
 # 🌍 Configurazione server reale
