@@ -73,12 +73,23 @@ jobs:
         with:
           github-token: ${{ secrets.NEZUKIINFRABOT }}
 
+      - name: Commenta sulla PR dopo il rilascio su PyPI
+        run: |
+          gh pr comment "$PR_URL" --body "🚀 **Nuovo pacchetto pubblicato su PyPI!**  
+          Puoi aggiornare alla nuova versione eseguendo:  
+          \`\`\`sh  
+          pip3 install --upgrade nezuki  
+          \`\`\`  
+          [Visualizza su PyPI](https://pypi.org/project/nezuki/)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
   # ✅ Step 4: Merge automatico su develop
   auto-merge:
-    name: Merging to Develop
+    name: Merging to Main (PROD)
     needs:
       - auto-approve
-
     runs-on: self-hosted
     steps:
       - name: Enable Auto Merge
