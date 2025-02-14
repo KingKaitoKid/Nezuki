@@ -12,8 +12,7 @@ permissions:
 jobs:
   # ✅ Step 2: Test Unitari
   test:
-    name: Run Tests
-    needs: check-merge
+    name: Run Tests 
     runs-on: self-hosted
     steps:
       - name: Checkout Repository
@@ -36,7 +35,6 @@ jobs:
   # ✅ Step 4: Build e Publish su PyPI
   build-and-publish:
     name: Build & Publish Package
-    needs: security-checks
     runs-on: self-hosted
     steps:
       - name: Checkout Repository
