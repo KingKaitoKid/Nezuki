@@ -1,0 +1,10 @@
+cloudflare
+colorama
+Flask
+Flask_Cors
+jsonpath_ng
+PyYAML
+requests
+mysql-connector-python
+psycopg2-binary
+coloredlogs
