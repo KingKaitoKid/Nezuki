@@ -50,6 +50,7 @@ jobs:
 
       - name: Build Package
         run: |
+          rm -rf dist  # ✅ Pulisce la cartella dist prima di creare il pacchetto
           python setup.py sdist bdist_wheel
 
       - name: Upload Package to PyPI
