@@ -51,8 +51,6 @@ jobs:
           echo "### 📌 Bandit Report:" >> security_summary.md
           cat bandit_report.txt >> security_summary.md
           echo "" >> security_summary.md
-          echo "### ⚠️ Safety Report:" >> security_summary.md
-          cat safety_report.txt >> security_summary.md
 
       - name: Comment Security Report on PR
         uses: thollander/actions-comment-pull-request@v2
