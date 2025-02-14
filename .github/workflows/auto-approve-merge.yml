@@ -20,12 +20,15 @@ jobs:
 
       - name: Install linting tools
         run: |
-          pip install black flake8
+          pip install black flake8 autopep8
 
-      - name: Check Formatting (Black)
-        run: black --check nezuki/
+      - name: Format Code with Black (Auto-fix)
+        run: black nezuki/
 
-      - name: Linting (Flake8)
+      - name: Auto-fix code style with autopep8
+        run: autopep8 --in-place --aggressive --aggressive -r nezuki/
+
+      - name: Run Flake8
         run: flake8 nezuki/
 
   # ✅ Step 2: Analisi di Sicurezza
