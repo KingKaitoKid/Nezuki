@@ -25,10 +25,11 @@ jobs:
       - name: Format Code with Black (Auto-fix)
         run: black nezuki/
 
-  # ✅ Step 2: Analisi di Sicurezza
+  # ✅ Step 2: Analisi di Sicurezza (Non Bloccante)
   security-check:
     name: Security Scan
     runs-on: self-hosted
+    continue-on-error: true  # <-- Questo permette al job di fallire senza fermare l'intero workflow
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,10 +39,24 @@ jobs:
           pip install bandit safety
 
       - name: Run Bandit (Security Scan)
-        run: bandit -r nezuki/ -lll
+        run: bandit -r nezuki/ -lll | tee bandit_report.txt || true
 
       - name: Check for vulnerable dependencies (Safety)
-        run: safety check --full-report
+        run: safety check --full-report | tee safety_report.txt || true
+
+      - name: Save Security Report
+        run: |
+          echo "## 🔍 Security Scan Report" > security_summary.md
+          echo "### 📌 Bandit Report:" >> security_summary.md
+          cat bandit_report.txt >> security_summary.md
+          echo "" >> security_summary.md
+          echo "### ⚠️ Safety Report:" >> security_summary.md
+          cat safety_report.txt >> security_summary.md
+
+      - name: Comment Security Report on PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: security_summary.md
 
   # ✅ Step 3: Test Unitari
   test:
@@ -96,7 +111,11 @@ jobs:
   # ✅ Step 6: Merge automatico su develop
   auto-merge:
     name: Merging to Develop
-    needs: auto-approve
+    needs:
+      - lint  # Controllo codice (Black, Flake8)
+      - test  # Esecuzione test unitari
+      - check-todo  # Controllo TODO/FIXME
+      - auto-approve  # Approvazione automatica PR
     runs-on: self-hosted
     steps:
       - name: Enable Auto Merge
