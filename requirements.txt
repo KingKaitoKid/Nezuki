@@ -6,3 +6,5 @@ jsonpath_ng
 PyYAML
 requests
 mysql-connector-python
+psycopg2-binary
+coloredlogs
