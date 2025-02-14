@@ -14,11 +14,19 @@ class JsonManager:
         '''
             istanzia l'oggetto.
         '''
-        self.logger = get_logger()
         self.load_data(json_data)
 
     
     def load_data(self, data:dict) -> None:
+        """
+        Legge il contenuto e lo converte nel dizioanrio Python
+
+        Args:
+            data (dict): il dato che deve essere letto e decodificato
+
+        Returns:
+            None: il dato viene salvato nell'attributo data dell'oggetto
+        """
         if str(type(data)) == "<class 'str'>" and re.match(r'^(.+)\/([^\/]+)$', data):
             data = self.read_json(data)
 
@@ -40,9 +48,12 @@ class JsonManager:
         """
             Legge il file da path assoluto e torna il contenuto del file in un JSON decodificato.
 
-            Input:
+            
+            Args:
+                path (str): Path asosluto del file JSON da leggere
 
-                path: Path asosluto del file JSON da leggere
+            Returns:
+                dict: contenuto nel formato JSON
         """
         try:
             with open(path, "r") as file_json:
@@ -55,7 +66,12 @@ class JsonManager:
     def retrieveKey(self, key:str) -> str|list:
         '''
             dato un pattern di chiavi, torna il valore corrispondente
-            esempio: "$.tastiera.inline_keyboard[*][*].text"
+
+            Args:
+                key (str): il percorso della chiave da estrarre, esempio: "$.tastiera.inline_keyboard[*][*].text"
+
+            Returns:
+                str|list: Ritorna il valore associato alla chiave cercata
         '''
         jsonpath_expression = parse(key)
 
@@ -70,10 +86,16 @@ class JsonManager:
         return aggregatore
 
     
-    def updateKey(self, pattern:str, valore) -> None:
+    def updateKey(self, pattern:str, valore: any) -> None:
         '''
             dato un pattern di chiavi ed un valore, la funzione va ad aggiornare la chiave con il valore passato
-            esempio: "$.tastiera.inline_keyboard[*][*].text"
+
+            Args:
+                pattern (str): Il percorso della singola chiave da aggiornare, ad esempio: $.tastiera.inline_keyboard[*][*].text
+                valore (any): Il valore da assegnare alla chiave
+
+            Returns:
+                None: Non ritorna alcun valore e non salva in nessun oggetto
         '''
         jsonpath_expr = parse(pattern)
         jsonpath_expr.find(self.data)
