@@ -78,7 +78,7 @@ jobs:
 
       - name: Search for TODOs
         run: |
-          if grep -rni 'TODO\|FIXME' nezuki/; then
+          if grep -rniE '\b(TODO|FIXME)\b' nezuki/; then
             echo "❌ Found TODOs or FIXMEs in the code! Please resolve them before merging."
             exit 1
           else
