@@ -143,8 +143,9 @@ class Database:
             return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita"}        
     
     def __del__(self) -> None:
-        """ Chiude la connessione al DB alla distruzione o cancellazione di questo oggetto """
-        self.connection.close
+        """ Chiude la connessione al DB se è stata inizializzata """
+        if hasattr(self, "connection") and self.connection:
+            self.connection.close()
 
 # ddb = Database(database="postgres", db_type="postgresql")
 
