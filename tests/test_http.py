@@ -1,7 +1,6 @@
 import pytest
 from nezuki.Http import Http, MethodNotSupported, InsufficientInfo
 
-
 # 🌍 Configurazione server reale
 TEST_HOST = "kaito.link"
 TEST_PORT = 30080
