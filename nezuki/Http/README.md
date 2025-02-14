@@ -11,7 +11,7 @@ Il modulo **Http** è incluso nel pacchetto **nezuki**. Per installarlo:
 pip install nezuki
 ```
 
-## 👀 Utilizzo
+## 👀 Utilizzo 
 
 ### 🔹 Creazione di un'istanza Http
 
