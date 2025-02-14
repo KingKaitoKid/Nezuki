@@ -2,6 +2,9 @@ from re import S
 import typing
 import mysql.connector
 import psycopg2, psycopg2.extras
+from Nezuki.Logger.Logger import get_nezuki_logger
+
+logger = get_nezuki_logger()  # Usa il logger corretto
 
 class Database:
     """
@@ -56,10 +59,13 @@ class Database:
             "password": password
         }
         try:
+            logger.debug("Avvio la connessione al DB con i parametri", extra={"internal": True})
             self.connection = self.start_connection()
             self.errorDBConnection = False
+            logger.debug("Connessione al DB avvenuta con successo", extra={"internal": True})
         except Exception as e:
-            print(e)
+            logger.error(f"Connessione al DB fallita. {e}", extra={"internal": True})
+            raise e
     
     def start_connection(self):
         """
@@ -139,3 +145,7 @@ class Database:
     def __del__(self) -> None:
         """ Chiude la connessione al DB alla distruzione o cancellazione di questo oggetto """
         self.connection.close
+
+ddb = Database(database="postgres", db_type="postgresql")
+
+ddb.connection_params("kaito.link:25432", "kaito", "kaitokid11")

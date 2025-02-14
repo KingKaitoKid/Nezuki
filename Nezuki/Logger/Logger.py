@@ -1,100 +1,229 @@
-from datetime import datetime
-import logging
-from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 import os
-from threading import local
-import uuid
-# from Common import versione, deprecated, compare_versions
+import sys
+import logging
+import inspect
+from logging.handlers import TimedRotatingFileHandler
+from coloredlogs import ColoredFormatter
 
+# Variabile globale per il logger di Nezuki
+_nezuki_logger = None
 
-current_version = "1.0.0"
+def get_caller_info():
+    """
+    Restituisce una stringa formattata "File.py::Classe::Funzione".
+    Se non disponibili, restituisce "_na_".
+    """
+    filename, classname, function = "_na_", "_na_", "_na_"
+    try:
+        stack = inspect.stack()
+        for frame_info in stack[2:]:
+            lower_filename = frame_info.filename.lower()
+            if "logging" not in lower_filename and "logger" not in lower_filename:
+                filename = os.path.basename(frame_info.filename) or "_na_"
+                function = frame_info.function or "_na_"
+                if "self" in frame_info.frame.f_locals:
+                    classname = frame_info.frame.f_locals["self"].__class__.__name__
+                break
+    except Exception:
+        pass
+    return f"{filename}::{classname}::{function}"
 
-class CustomFormatter(logging.Formatter):
-    def __init__(self, fmt=None, datefmt=None, style='%', log_instance=None):
-        super().__init__(fmt, datefmt, style)
-        self.log_instance = log_instance
-
-    def format(self, record):
-        # Aggiunge logId al record dinamicamente
-        record.logId = self.log_instance.logId
-        record.msg = record.msg.replace('\n', '<br>')
-        return super().format(record)
-
-# @versione("1.0.0")
-class Logger:
-    """ Definisce strutture di log in modo formale e da poter essere visualizzato correttamente nel webserver """
-
-    isLocal: bool
-    """ Indica se il bot è in esecuzione in localhost o sul server """
-
-    pathLogs: str
-    """ Indica il path di dove sono salvati i log del bot """
-
-    logId: str
-    """ Identificati olog che è un UUID """
-
-    ownerModuleLog: bool
-    """ Indica l'owner del log se è Custom (sviluppatore) o Internal (log generati dalle dipendenze)"""
-
-    def __init__(self, localMode: bool = False, localFileLogPath: str = "/", logId="First init", ownerModuleLog: bool = False):
-        """ Inizializza la classe, il parametro commonLogger serve alla classe Common per loggare eventuali errori generici che si con verificati """
-        self.isLocal = localMode
-        self.pathLogs = localFileLogPath
-        self.logId = self._update_log_id()
-        self.setup_logging()
-        self.ownerModuleLog:bool = ownerModuleLog
+def merge_configs(user_config):
+    """
+    Unisce la configurazione fornita dall'utente con quella di default.
+    Se un parametro è mancante, viene impostato al suo valore predefinito.
+    """
+    default_config = {
+        "level": logging.DEBUG,
+        "console": {
+            "enabled": True,
+            "level": logging.DEBUG,
+            "formatter": "%(asctime)s - %(name)s - %(levelname)s - %(context)s - %(internal_str)s - %(message)s"
+        },
+        "file": {
+            "enabled": True,
+            "filename": None,  # 🔴 Obbligatorio, deve essere passato dall'utente
+            "level": logging.DEBUG,
+            "formatter": "%(asctime)s - %(name)s - %(levelname)s - %(context)s - %(internal_str)s - %(message)s",
+            "maxBytes": 100 * 1024 * 1024,  # 100MB
+            "backupCount": 5,
+            "when": "D",
+            "interval": 30
+        }
+    }
     
-    def setModuleLog(self, moduleLog: bool = True):
-        """ Imposta la variabile che indica se un log è interno oppure no """
-        self.ownerModuleLog = moduleLog
-        self.pathLogs = self.pathLogs + "/Module"
-
-    def _update_log_id(self):
-        """ Aggiorna il log id """
-        self.logId = uuid.uuid1()
-        return self.logId
-
-    def setup_logging(self):
-        """ Scrive i log sul terminale e file dedicato, creando il file di log della giornata, in base al peso (100MB max), conservando fino a 5 backup da 100MB (i più vecchi verranno eliminati) o gli ultimi 30 giorni"""
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)  # Configura il livello di log
-        # Handlers per la rotazione dei log
-        timed_handler = TimedRotatingFileHandler(f"{self.pathLogs}/bot_log_timed.log", when="D", interval=1, backupCount=30)
-        size_handler = RotatingFileHandler(f"{self.pathLogs}/bot_log_size.log", maxBytes=200*1024*1024, backupCount=5)
-
-        # Formatter
-        if self.isLocal:
-            if self.ownerModuleLog == False:
-                formatter = CustomFormatter('%(asctime)s - %(levelname)s - Local - Custom - %(name)s - %(module)s - %(funcName)s - %(logId)s - %(message)s', log_instance=self)
+    # Unione delle configurazioni con fallback ai valori di default
+    merged_config = default_config.copy()
+    if user_config:
+        for key in user_config:
+            if key in merged_config and isinstance(merged_config[key], dict):
+                merged_config[key].update(user_config[key])  # Unisce i dizionari
             else:
-                formatter = CustomFormatter('%(asctime)s - %(levelname)s - Local - Internal - %(name)s - %(module)s - %(funcName)s - %(logId)s - %(message)s', log_instance=self)
-        else:
-            if self.ownerModuleLog == False:
-                formatter = CustomFormatter('%(asctime)s - %(levelname)s - Server - Custom - %(name)s - %(module)s - %(funcName)s - %(logId)s - %(message)s', log_instance=self)
-            else:
-                formatter = CustomFormatter('%(asctime)s - %(levelname)s - Server - Internal - %(name)s - %(module)s - %(funcName)s - %(logId)s - %(message)s', log_instance=self)
-        timed_handler.setFormatter(formatter)
-        size_handler.setFormatter(formatter)
+                merged_config[key] = user_config[key]
+    
+    # ✅ Controllo se il filename è stato specificato
+    if merged_config["file"]["enabled"] and not merged_config["file"]["filename"]:
+        raise ValueError("Errore: Devi specificare un percorso per il file di log ('file.filename').")
 
-        # StreamHandler per loggare anche su console
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
+    return merged_config
 
-        # Aggiungi handlers al logger
-        self.logger.addHandler(timed_handler)
-        self.logger.addHandler(size_handler)
-        self.logger.addHandler(console_handler)
+class CallerInfoFilter(logging.Filter):
+    """Aggiunge 'context' e 'internal_str' ai record di log."""
+    def filter(self, record):
+        if not hasattr(record, "internal"):
+            record.internal = False
+        record.internal_str = "[INTERNAL]" if record.internal else "[USER]"
+        record.context = get_caller_info()
+        return True
 
-    def get_logs(self, query=''):
-        """ Ritorna i file di log dei file backup """
-        log_files = [f for f in os.listdir(self.pathLogs) if (f.endswith('.log') and "bot_log_size" in f)]
-        logs = []
-        for log_file in log_files:
-            with open(os.path.join(self.pathLogs, log_file), 'r') as f:
-                for line in f:
-                    if query.lower() in line.lower():
-                        logs.append(line.strip())
+class NezukiFormatter(logging.Formatter):
+    """Formatter che garantisce che ogni log sia su una sola riga e contiene tutte le info."""
+    def format(self, record):
+        record.__dict__.setdefault("context", get_caller_info())
+        record.__dict__.setdefault("internal_str", "[USER]")
+        s = super().format(record)
+        return s.replace("\n", "\\n").replace("\r", "\\r")
+
+class SizeAndTimeRotatingFileHandler(TimedRotatingFileHandler):
+    """Gestisce la rotazione del file di log sia per dimensione che per tempo."""
+    def __init__(self, filename, when="D", interval=30, backupCount=5, maxBytes=100*1024*1024, **kwargs):
+        self.maxBytes = maxBytes
+        super().__init__(filename, when=when, interval=interval, backupCount=backupCount, **kwargs)
+    def shouldRollover(self, record):
+        return super().shouldRollover(record) or (os.path.exists(self.baseFilename) and os.stat(self.baseFilename).st_size >= self.maxBytes)
+
+def configure_nezuki_logger(config):
+    """L'utente chiama questa funzione per configurare il logger globale."""
+    global _nezuki_logger
+    _nezuki_logger = _create_logger(config)
+
+def get_nezuki_logger():
+    """Restituisce il logger globale di Nezuki. Se non è configurato, usa un logger di default."""
+    global _nezuki_logger
+    if _nezuki_logger is None:
+        default_config = {
+            "file": {
+                "filename": "/common_libraries/NezukiLogs/module_logs.log",
+                "maxBytes": 100 * 1024 * 1024,
+                "backupCount": 3,
+                "when": "D",
+                "interval": 30
+            }
+        }
+        _nezuki_logger = _create_logger(default_config)
+    return _nezuki_logger
+
+def _create_logger(config):
+    """Crea un'istanza del logger con la configurazione fornita."""
+    config = merge_configs(config)
+    logger = logging.getLogger("Nezuki")
+    logger.setLevel(config["level"])
+    logger.propagate = False
+
+    logger.handlers = []  # Pulisce gli handler esistenti
+    logger.addFilter(CallerInfoFilter())
+
+    # ✅ Console Handler con ColoredFormatter
+    console_conf = config["console"]
+    if console_conf["enabled"]:
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(console_conf["level"])
+        ch.setFormatter(ColoredFormatter(console_conf["formatter"]))
+        ch.addFilter(CallerInfoFilter())
+        logger.addHandler(ch)
+
+    # ✅ File Handler
+    file_conf = config["file"]
+    if file_conf["enabled"]:
+        filename = file_conf["filename"]
+        dir_name = os.path.dirname(os.path.abspath(filename))
+        os.makedirs(dir_name, exist_ok=True)
+
+        fh = SizeAndTimeRotatingFileHandler(
+            filename=filename,
+            when=file_conf["when"],
+            interval=file_conf["interval"],
+            backupCount=file_conf["backupCount"],
+            maxBytes=file_conf["maxBytes"]
+        )
+        fh.setLevel(file_conf["level"])
+        fh.setFormatter(NezukiFormatter(file_conf["formatter"]))
+        fh.addFilter(CallerInfoFilter())
+        logger.addHandler(fh)
+
+    return logger
+
+class NezukiLogger:
+    _instance = None
+
+    def __new__(cls, config=None):
+        if cls._instance is None:
+            cls._instance = super(NezukiLogger, cls).__new__(cls)
+            cls._instance._configured = False
+        return cls._instance
+
+    def __init__(self, config=None):
+        if self._configured:
+            return
         
-        # Ordina i log in ordine decrescente per data e ora
-        logs.sort(key=lambda x: datetime.strptime(x.split(" - ")[0], '%Y-%m-%d %H:%M:%S,%f'), reverse=True)
-        return logs
+        # 🔄 Integra la configurazione dell'utente con i valori di default
+        config = merge_configs(config)
+
+        self.logger = logging.getLogger("Nezuki")
+        self.logger.setLevel(config["level"])
+        self.logger.propagate = False
+
+        self._configure_handlers(config)
+        self.logger.addFilter(CallerInfoFilter())  # ✅ Applica il filtro ai log
+        self._configured = True
+
+    def _configure_handlers(self, config):
+        self.logger.handlers = []
+        fmt_str = config["console"]["formatter"]
+
+        # ✅ Console Handler con coloredlogs
+        console_conf = config["console"]
+        if console_conf["enabled"]:
+            ch = logging.StreamHandler(sys.stdout)
+            ch.setLevel(console_conf["level"])
+            ch.setFormatter(ColoredFormatter(fmt_str))  # ✅ Mantiene i colori sulla console
+            ch.addFilter(CallerInfoFilter())  # ✅ Aggiunge il filtro
+            self.logger.addHandler(ch)
+
+        # ✅ File Handler
+        file_conf = config["file"]
+        if file_conf["enabled"]:
+            filename = file_conf["filename"]
+            dir_name = os.path.dirname(os.path.abspath(filename))
+            os.makedirs(dir_name, exist_ok=True)  # ✅ Assicura che la cartella esista
+
+            fh = SizeAndTimeRotatingFileHandler(
+                filename=filename,
+                when=file_conf["when"],
+                interval=file_conf["interval"],
+                backupCount=file_conf["backupCount"],
+                maxBytes=file_conf["maxBytes"]
+            )
+            fh.setLevel(file_conf["level"])
+            fh.setFormatter(NezukiFormatter(file_conf["formatter"]))  # ✅ Usa il formatter corretto
+            fh.addFilter(CallerInfoFilter())  # ✅ Applica il filtro
+            self.logger.addHandler(fh)
+
+def get_logger(config=None):
+    return NezukiLogger(config).logger
+
+# --- TEST MINIMALE ---
+if __name__ == "__main__":
+    custom_config = {
+        "file": {
+            "filename": "/common_libraries/Nezuki/Nezuki3.log",
+            "maxBytes": 100 * 1024 * 1024,
+            "backupCount": 3,
+            "when": "D",
+            "interval": 30
+        }
+    }
+    logger = get_logger(custom_config)
+
+    logger.info("Messaggio utente normale.")
+    logger.debug("Messaggio tecnico interno.", extra={"internal": True})
