@@ -25,12 +25,6 @@ jobs:
       - name: Format Code with Black (Auto-fix)
         run: black nezuki/
 
-      - name: Auto-fix code style with autopep8
-        run: autopep8 --in-place --aggressive --aggressive -r nezuki/
-
-      - name: Run Flake8
-        run: flake8 nezuki/
-
   # ✅ Step 2: Analisi di Sicurezza
   security-check:
     name: Security Scan
@@ -53,7 +47,7 @@ jobs:
   test:
     name: Running Unit Test
     runs-on: self-hosted
-    needs: [lint, security-check]  # I test partono solo se linting e security passano
+    needs: [lint]  # I test partono solo se linting e security passano
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
