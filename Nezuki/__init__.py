@@ -2,12 +2,14 @@ __version__ = "1.0.1"
 
 from .Http.Http import Http
 from .Bot.Bot import Bot
-# from .commonLoggerSingleTon import commonLoggerSingleTon # Da rivedere la struttura nuova
-# from .commonLogId import commonLogId # Da rivedere la struttura nuova
 from .Database.Database import Database
-# from .Documentor.Documentor import Documentor # Da utilizzare un modulo pip adatto già creato
 from .Http.Http import Http
 from .JsonManager.JsonManager import JsonManager
+from .YamlManager.YamlManager import YamlManager
+from .Logger.Logger import get_nezuki_logger, configure_nezuki_logger
+# from .commonLoggerSingleTon import commonLoggerSingleTon # Da rivedere la struttura nuova
+# from .commonLogId import commonLogId # Da rivedere la struttura nuova
+# from .Documentor.Documentor import Documentor # Da utilizzare un modulo pip adatto già creato
 # from .LogContext.LogContext import LogContext # Da rivedere la struttura nuova
 # from .Logger.Logger import Logger # Da rivedere la struttura nuova
 # from .Mail.Mail import Mail # Fa parte del potenziamento del rilascio potenziamento moduli
@@ -19,6 +21,5 @@ from .JsonManager.JsonManager import JsonManager
 # from .TelegramParser.TelegramParser import TelegramParser # Come da riga precedente
 # from .Telegram.Telegram import TelegramParser_OLD # Come da riga precedente
 # from .WebLogsViewer import WebLogsViewer # Come da riga precedente
-from .YamlManager.YamlManager import YamlManager
 
-__all__ = ['Bot', 'Database', 'Http', 'JsonManager', 'YamlManager']
+__all__ = ['Bot', 'Database', 'Http', 'JsonManager', 'YamlManager', 'get_nezuki_logger', 'configure_nezuki_logger']
