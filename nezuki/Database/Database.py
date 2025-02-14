@@ -2,7 +2,7 @@ from re import S
 import typing
 import mysql.connector
 import psycopg2, psycopg2.extras
-from Nezuki.Logger.Logger import get_nezuki_logger
+from nezuki.Logger import get_nezuki_logger
 
 logger = get_nezuki_logger()  # Usa il logger corretto
 
@@ -146,6 +146,6 @@ class Database:
         """ Chiude la connessione al DB alla distruzione o cancellazione di questo oggetto """
         self.connection.close
 
-ddb = Database(database="postgres", db_type="postgresql")
+# ddb = Database(database="postgres", db_type="postgresql")
 
-ddb.connection_params("kaito.link:25432", "kaito", "kaitokid11")
+# ddb.connection_params("kaito.link:25432", "kaito", "kaitokid11")
