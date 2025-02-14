@@ -25,6 +25,7 @@ jobs:
       - name: Format Code with Black (Auto-fix)
         run: black nezuki/
 
+
   # ✅ Step 2: Analisi di Sicurezza (Non Bloccante)
   security-check:
     name: Security Scan
@@ -116,6 +117,7 @@ jobs:
       - test  # Esecuzione test unitari
       - check-todo  # Controllo TODO/FIXME
       - auto-approve  # Approvazione automatica PR
+
     runs-on: self-hosted
     steps:
       - name: Enable Auto Merge
