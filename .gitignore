@@ -134,3 +134,4 @@ tests/*.py[cod]
 # Ignore build directories for subpackages
 Nezuki/Database/build/
 Nezuki/TMDB/dist/
+Logs/

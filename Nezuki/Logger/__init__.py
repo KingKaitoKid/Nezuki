@@ -1,3 +1,5 @@
-from .Logger import Logger
+__version__ = "2.0.0"
 
-__all__ = ['Logger']
+from .Logger import configure_nezuki_logger, get_nezuki_logger
+
+__all__ = ['configure_nezuki_logger', 'get_nezuki_logger']
