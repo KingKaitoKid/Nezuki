@@ -1,4 +1,4 @@
-name: Auto Approve and Merge PR
+name: Pull Request Check
 
 on:
   pull_request:
@@ -10,9 +10,47 @@ permissions:
   contents: write
 
 jobs:
-  test:
-    name: Run Tests
+  # ✅ Step 1: Linting e Code Style
+  lint:
+    name: Linting and Code Style Check
     runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install linting tools
+        run: |
+          pip install black flake8
+
+      - name: Check Formatting (Black)
+        run: black --check nezuki/
+
+      - name: Linting (Flake8)
+        run: flake8 nezuki/
+
+  # ✅ Step 2: Analisi di Sicurezza
+  security-check:
+    name: Security Scan
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install security tools
+        run: |
+          pip install bandit safety
+
+      - name: Run Bandit (Security Scan)
+        run: bandit -r nezuki/ -lll
+
+      - name: Check for vulnerable dependencies (Safety)
+        run: safety check --full-report
+
+  # ✅ Step 3: Test Unitari
+  test:
+    name: Running Unit Test
+    runs-on: self-hosted
+    needs: [lint, security-check]  # I test partono solo se linting e security passano
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,9 +68,27 @@ jobs:
       - name: Run tests
         run: pytest --cov=nezuki --cov-report=term-missing
 
+  # ✅ Step 4: Controllo TODO e FIXMEs nel codice
+  check-todo:
+    name: Check for TODOs/FIXMEs
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Search for TODOs
+        run: |
+          if grep -rni 'TODO\|FIXME' nezuki/; then
+            echo "❌ Found TODOs or FIXMEs in the code! Please resolve them before merging."
+            exit 1
+          else
+            echo "✅ No TODOs or FIXMEs found."
+          fi
+
+  # ✅ Step 5: Approva la PR se tutto è passato
   auto-approve:
-    name: Auto Approve PR
-    needs: test
+    name: Approving PR
+    needs: [test, check-todo]  # Approva solo se test e check-todo passano
     runs-on: self-hosted
     steps:
       - name: Approve PR
@@ -40,8 +96,9 @@ jobs:
         with:
           github-token: ${{ secrets.NEZUKIINFRABOT }}
 
+  # ✅ Step 6: Merge automatico su develop
   auto-merge:
-    name: Auto Merge PR
+    name: Merging to Develop
     needs: auto-approve
     runs-on: self-hosted
     steps:
