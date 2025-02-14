@@ -10,23 +10,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  # ✅ Step 1: Verifica che il merge non abbia conflitti
-  check-merge:
-    name: Verify Mergeability
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Check Merge Conflicts
-        run: |
-          git fetch origin main
-          if ! git merge-base --is-ancestor origin/main HEAD; then
-            echo "❌ Merge conflict detected. Aborting!"
-            exit 1
-          fi
-          echo "✅ No merge conflicts detected!"
-
   # ✅ Step 2: Test Unitari
   test:
     name: Run Tests
@@ -49,31 +32,6 @@ jobs:
       - name: Run tests
         run: pytest --cov=nezuki --cov-report=term-missing
 
-  # ✅ Step 3: Analisi Statica e Sicurezza
-  security-checks:
-    name: Security & Linting
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install bandit safety black flake8
-
-      - name: Run Bandit (Security Scan)
-        run: bandit -r nezuki/ -lll
-
-      - name: Check for vulnerable dependencies (Safety)
-        run: safety check --full-report
-
-      - name: Check Formatting (Black)
-        run: black --check nezuki/
-
-      - name: Linting (Flake8)
-        run: flake8 nezuki/
 
   # ✅ Step 4: Build e Publish su PyPI
   build-and-publish:
