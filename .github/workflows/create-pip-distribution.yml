@@ -14,7 +14,7 @@ jobs:
   test:
     name: Run Tests
     needs: check-merge
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
   build-and-publish:
     name: Build & Publish Package
     needs: security-checks
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
