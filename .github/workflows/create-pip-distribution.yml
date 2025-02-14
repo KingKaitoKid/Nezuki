@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  # ✅ Step 2: Test Unitari
+  # ✅ Step 1: Test Unitari
   test:
     name: Run Tests 
     runs-on: self-hosted
@@ -32,7 +32,7 @@ jobs:
         run: pytest --cov=nezuki --cov-report=term-missing
 
 
-  # ✅ Step 4: Build e Publish su PyPI
+  # ✅ Step 2: Build e Publish su PyPI
   build-and-publish:
     name: Build & Publish Package
     needs: [test]
@@ -60,7 +60,8 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
           twine upload dist/*
-  # ✅ Step 5: Approva la PR se tutto è passato
+
+  # ✅ Step 3: Approva la PR se tutto è passato
   auto-approve:
     name: Approving PR
     needs:
@@ -72,7 +73,7 @@ jobs:
         with:
           github-token: ${{ secrets.NEZUKIINFRABOT }}
 
-  # ✅ Step 6: Merge automatico su develop
+  # ✅ Step 4: Merge automatico su develop
   auto-merge:
     name: Merging to Develop
     needs:
