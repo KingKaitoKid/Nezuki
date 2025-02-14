@@ -135,3 +135,12 @@ tests/*.py[cod]
 Nezuki/Database/build/
 Nezuki/TMDB/dist/
 Logs/
+
+# GitHub Actions Runner (Self-Hosted)
+actions-runner/
+runner.lock
+.runner
+work/
+_service
+diag/
+logs/

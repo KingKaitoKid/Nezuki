@@ -1,0 +1,52 @@
+name: Auto Approve and Merge PR
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-mock
+
+      - name: Run tests
+        run: pytest --cov=nezuki --cov-report=term-missing
+
+  auto-approve:
+    name: Auto Approve PR
+    needs: test
+    runs-on: self-hosted
+    steps:
+      - name: Approve PR
+        uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-merge:
+    name: Auto Merge PR
+    needs: auto-approve
+    runs-on: self-hosted
+    steps:
+      - name: Enable Auto Merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
