@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='nezuki',  # Nome in minuscolo
-    version='2.0.3',
+    version='2.0.4',
     author='Sergio Catacci',
     author_email='sergio.catacci@icloud.com',
     description='Un pacchetto per la gestione della domotica e servizi server',
