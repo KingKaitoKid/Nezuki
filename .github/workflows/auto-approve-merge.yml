@@ -1,0 +1,127 @@
+name: Pull Request Check
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  # ✅ Step 1: Linting e Code Style
+  lint:
+    name: Linting and Code Style Check
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install linting tools
+        run: |
+          pip install black flake8 autopep8
+
+      - name: Format Code with Black (Auto-fix)
+        run: black nezuki/
+
+
+  # ✅ Step 2: Analisi di Sicurezza (Non Bloccante)
+  security-check:
+    name: Security Scan
+    runs-on: self-hosted
+    continue-on-error: true  # <-- Questo permette al job di fallire senza fermare l'intero workflow
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install security tools
+        run: |
+          pip install bandit safety
+
+      - name: Run Bandit (Security Scan)
+        run: bandit -r nezuki/ -lll | tee bandit_report.txt || true
+
+      - name: Check for vulnerable dependencies (Safety)
+        run: safety check --full-report | tee safety_report.txt || true
+
+      - name: Save Security Report
+        run: |
+          echo "## 🔍 Security Scan Report" > security_summary.md
+          echo "### 📌 Bandit Report:" >> security_summary.md
+          cat bandit_report.txt >> security_summary.md
+          echo "" >> security_summary.md
+          echo "### ⚠️ Safety Report:" >> security_summary.md
+          cat safety_report.txt >> security_summary.md
+
+      - name: Comment Security Report on PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: security_summary.md
+
+  # ✅ Step 3: Test Unitari
+  test:
+    name: Running Unit Test
+    runs-on: self-hosted
+    needs: [lint]  # I test partono solo se linting e security passano
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-mock
+
+      - name: Run tests
+        run: pytest --cov=nezuki --cov-report=term-missing
+
+  # ✅ Step 4: Controllo TODO e FIXMEs nel codice
+  check-todo:
+    name: Check for TODOs/FIXMEs
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Search for TODOs
+        run: |
+          if grep -rniE '\b(TODO|FIXME)\b' nezuki/; then
+            echo "❌ Found TODOs or FIXMEs in the code! Please resolve them before merging."
+            exit 1
+          else
+            echo "✅ No TODOs or FIXMEs found."
+          fi
+
+  # ✅ Step 5: Approva la PR se tutto è passato
+  auto-approve:
+    name: Approving PR
+    needs: [test, check-todo]  # Approva solo se test e check-todo passano
+    runs-on: self-hosted
+    steps:
+      - name: Approve PR
+        uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.NEZUKIINFRABOT }}
+
+  # ✅ Step 6: Merge automatico su develop
+  auto-merge:
+    name: Merging to Develop
+    needs:
+      - lint  # Controllo codice (Black, Flake8)
+      - test  # Esecuzione test unitari
+      - check-todo  # Controllo TODO/FIXME
+      - auto-approve  # Approvazione automatica PR
+
+    runs-on: self-hosted
+    steps:
+      - name: Enable Auto Merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}

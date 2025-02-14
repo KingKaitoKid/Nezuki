@@ -140,6 +140,11 @@ Se hai suggerimenti o bug da segnalare, apri un **issue** su [GitHub](https://gi
 
 ---
 
-🔧 **Creato con ❤️ da KingKaitoKid** | 🏡 **Parte di Nezuki**  
-📌 **Versione:** `2.0.0` | 🐍 **Compatibile con Python 3.11+**
+📌 **Autore:** *Sergio Catacci*  
+📌 **Versione:** *2.0.2*  
+📌 **Licenza:** *MIT*  
+
+---
+
+📌 **Se ti è utile, lascia una ⭐ su [GitHub](https://github.com/KingKaitoKid/Nezuki)!** 😊
 

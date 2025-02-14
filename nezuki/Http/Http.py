@@ -1,5 +1,8 @@
 import typing
 import requests
+from nezuki.Logger import get_nezuki_logger
+
+logger = get_nezuki_logger()
 
 class MethodNotSupported(Exception):
     """Errore sollevato quando viene usato un metodo non implementato."""
@@ -73,11 +76,15 @@ class Http:
         if payload is None:
             payload = {}
         if method_lower not in self.method_mapper:
+            logger.error("Metodo non supportato", extra={"internal": True})
             raise MethodNotSupported(f"Il metodo {method} non è supportato. Scegli tra {list(self.method_mapper.keys())}.")
         try:
+            logger.info(f"Chiamata HTTP\nPayload{payload}\nHeaders: {headers}\nTimeout: {self.timeout}", extra={"internal": True})
             response = self.method_mapper[method_lower](url, json=payload, headers=headers, timeout=self.timeout)
+            logger.info(f"Risposta HTTP\nPayload{response}", extra={"internal": True})
             return response
         except Exception as e:
+            logger.error(f"Errore durante la chiamata HTTP: {e}", extra={"internal": True})
             raise
 
     def api_request(self, method: typing.Literal['GET', 'POST'], path: str, payload: dict, headers: dict = None) -> requests.Response:
@@ -99,6 +106,7 @@ class Http:
             InsufficientInfo: Se almeno uno di questi elementi non è stato passato: protocol, host, port
             Exception: Rilancia eventuali eccezioni sollevate durante la richiesta.
         """
+        logger.debug("Applicazione regole chiamata ad API", extra={"internal": True})
         if not self.protocol or not self.host or self.port == 0:
             raise InsufficientInfo("Verificare che protocol, host e port siano impostati correttamente.")
 
@@ -129,6 +137,8 @@ class Http:
             MethodNotSupported: Se il metodo HTTP non è supportato.
             Exception: Rilancia eventuali eccezioni sollevate durante la richiesta.
         """
+        log_info = {"host": host, "port": port, "method": method, "protocol": protocol, "timeout": self.timeout, "payload": payload, "headers": headers}
+        logger.debug(f"Effettuo chiamata HTTP con parametri specifici: {log_info}", extra={"internal": True})
         url = self._build_url(protocol, host, port, path)
         return self._perform_request(method, url, payload, headers)
 
