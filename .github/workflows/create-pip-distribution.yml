@@ -1,0 +1,104 @@
+name: Release Pipeline for Main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # ✅ Step 1: Verifica che il merge non abbia conflitti
+  check-merge:
+    name: Verify Mergeability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check Merge Conflicts
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "❌ Merge conflict detected. Aborting!"
+            exit 1
+          fi
+          echo "✅ No merge conflicts detected!"
+
+  # ✅ Step 2: Test Unitari
+  test:
+    name: Run Tests
+    needs: check-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-mock
+
+      - name: Run tests
+        run: pytest --cov=nezuki --cov-report=term-missing
+
+  # ✅ Step 3: Analisi Statica e Sicurezza
+  security-checks:
+    name: Security & Linting
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install bandit safety black flake8
+
+      - name: Run Bandit (Security Scan)
+        run: bandit -r nezuki/ -lll
+
+      - name: Check for vulnerable dependencies (Safety)
+        run: safety check --full-report
+
+      - name: Check Formatting (Black)
+        run: black --check nezuki/
+
+      - name: Linting (Flake8)
+        run: flake8 nezuki/
+
+  # ✅ Step 4: Build e Publish su PyPI
+  build-and-publish:
+    name: Build & Publish Package
+    needs: security-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install packaging tools
+        run: pip install setuptools wheel twine
+
+      - name: Build Package
+        run: |
+          python setup.py sdist bdist_wheel
+
+      - name: Upload Package to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          twine upload dist/*
