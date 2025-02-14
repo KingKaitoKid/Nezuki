@@ -1,105 +1,154 @@
-import json, re
+import json
+import os
+import re
 from jsonpath_ng import parse
-from Common import *
-from commonLogId import *
+from nezuki.Logger import get_nezuki_logger
 
-@versione("1.0.3")
+# Inizializza il logger di Nezuki con il flag internal=True
+logger = get_nezuki_logger()
+
 class JsonManager:
-    '''
-        Questa classe serve per gestire un json.
-    '''
+    """
+    Questa classe permette di gestire file JSON, supportando lettura, scrittura e modifica dei dati.
+    """
 
-    
-    def __init__(self, json_data:dict|str|list={}) -> None:
-        '''
-            istanzia l'oggetto.
-        '''
-        self.load_data(json_data)
-
-    
-    def load_data(self, data:dict) -> None:
+    def __init__(self, json_data: dict | str | list = {}):
         """
-        Legge il contenuto e lo converte nel dizioanrio Python
+        Istanzia l'oggetto JsonManager con un JSON iniziale.
 
         Args:
-            data (dict): il dato che deve essere letto e decodificato
+            json_data (dict|str|list, optional): JSON di partenza, può essere un dizionario, una stringa JSON o una lista.
+        """
+        self.data = {}
+        self.load_data(json_data)
+
+    def load_data(self, data: dict | str | list) -> None:
+        """
+        Carica e decodifica il JSON.
+
+        Args:
+            data (dict|str|list): JSON da caricare.
 
         Returns:
-            None: il dato viene salvato nell'attributo data dell'oggetto
+            None: Il dato viene salvato nell'attributo `self.data`.
         """
-        if str(type(data)) == "<class 'str'>" and re.match(r'^(.+)\/([^\/]+)$', data):
+        if isinstance(data, str) and os.path.exists(data):
+            logger.debug(f"Caricamento JSON da file: {data}", extra={"internal": True})
             data = self.read_json(data)
 
-        match str(type(data)):
-            case "<class 'dict'>":
+        try:
+            if isinstance(data, dict):
                 self.data = data
-
-            case "<class 'str'>":
+            elif isinstance(data, str):
                 self.data = json.loads(data)
+            elif isinstance(data, list):
+                self.data = json.loads(json.dumps(data))  # Normalizza in JSON
+            else:
+                raise ValueError("Tipo di dato non supportato per il JSON")
+        except Exception as e:
+            logger.error(f"Errore nel caricamento del JSON: {e}", extra={"internal": True})
+            self.data = {}
 
-            case "<class 'list'>":
-                self.data = json.loads(json.dumps(data, indent=2))
-
-            case _:
-                self.data = json.load(data)
-
-    
     def read_json(self, path: str) -> dict:
         """
-            Legge il file da path assoluto e torna il contenuto del file in un JSON decodificato.
+        Legge un file JSON da un percorso e restituisce il suo contenuto come dizionario.
 
-            
-            Args:
-                path (str): Path asosluto del file JSON da leggere
+        Args:
+            path (str): Percorso assoluto del file JSON.
 
-            Returns:
-                dict: contenuto nel formato JSON
+        Returns:
+            dict: Contenuto del file JSON.
+        """
+        if not os.path.exists(path):
+            logger.error(f"File JSON non trovato: {path}", extra={"internal": True})
+            return {}
+
+        try:
+            with open(path, "r", encoding="utf-8") as file_json:
+                content = json.load(file_json)
+                logger.debug(f"JSON caricato correttamente da '{path}'", extra={"internal": True})
+                return content
+        except json.JSONDecodeError as e:
+            logger.error(f"Errore di parsing JSON nel file '{path}': {e}", extra={"internal": True})
+        except Exception as e:
+            logger.error(f"Errore nella lettura del file JSON '{path}': {e}", extra={"internal": True})
+
+        return {}
+
+    def retrieveKey(self, key: str) -> str | list:
+        """
+        Recupera il valore corrispondente a un pattern JSONPath.
+
+        Args:
+            key (str): Il percorso della chiave da estrarre, es. "$.tastiera.inline_keyboard[*][*].text"
+
+        Returns:
+            str | list: Il valore associato alla chiave cercata o una lista di valori se ci sono più corrispondenze.
+        """
+
+        try:
+            jsonpath_expression = parse(key)
+            results = [match.value for match in jsonpath_expression.find(self.data)]
+
+            if not results:
+                logger.warning(f"Nessun valore trovato per la chiave '{key}'", extra={"internal": True})
+                return []
+
+            if len(results) == 1:
+                logger.debug(f"Valore trovato: {results[0]} per la chiave '{key}'", extra={"internal": True})
+                return results[0]
+
+            logger.debug(f"Valori trovati ({len(results)}) per la chiave '{key}': {results}", extra={"internal": True})
+            return results
+        except Exception as e:
+            logger.error(f"Errore durante il recupero della chiave '{key}': {e}", extra={"internal": True})
+            return []
+
+    def updateKey(self, pattern: str, value: any) -> bool:
+        """
+        Aggiorna il valore di una chiave JSON utilizzando JSONPath.
+
+        Args:
+            pattern (str): Espressione JSONPath della chiave da aggiornare.
+            value (any): Nuovo valore da assegnare.
+
+        Returns:
+            bool: `True` se l'aggiornamento è riuscito, `False` in caso contrario.
         """
         try:
-            with open(path, "r") as file_json:
-                content_json = json.loads(file_json.read())
+            jsonpath_expr = parse(pattern)
+            matches = jsonpath_expr.find(self.data)
+
+            if not matches:
+                logger.warning(f"Nessuna chiave trovata con il pattern '{pattern}'", extra={"internal": True})
+                return False
+
+            jsonpath_expr.update(self.data, value)
+            logger.debug(f"Aggiornato '{pattern}' con il valore '{value}'", extra={"internal": True})
+            return True
         except Exception as e:
-            content_json = None
-        return content_json
+            logger.error(f"Errore nell'aggiornamento della chiave '{pattern}': {e}", extra={"internal": True})
+            return False
 
-    
-    def retrieveKey(self, key:str) -> str|list:
-        '''
-            dato un pattern di chiavi, torna il valore corrispondente
+# --- ESEMPIO DI UTILIZZO ---
+if __name__ == "__main__":
+    json_data = {
+        "utente": {
+            "nome": "Sergio",
+            "età": 28
+        },
+        "hobby": ["programmazione", "anime", "gaming"]
+    }
 
-            Args:
-                key (str): il percorso della chiave da estrarre, esempio: "$.tastiera.inline_keyboard[*][*].text"
+    manager = JsonManager(json_data)
 
-            Returns:
-                str|list: Ritorna il valore associato alla chiave cercata
-        '''
-        jsonpath_expression = parse(key)
+    # Recupero dati
+    print(manager.retrieveKey("$.utente.nome"))  # Output: "Sergio"
 
-        aggregatore = []
+    # Aggiornamento chiave
+    manager.updateKey("$.utente.nome", "Andrea")
 
-        for match in jsonpath_expression.find(self.data):
-            aggregatore.append(match.value)
-
-        if len(aggregatore) == 1:
-            aggregatore = aggregatore[0]
-
-        return aggregatore
-
-    
-    def updateKey(self, pattern:str, valore: any) -> None:
-        '''
-            dato un pattern di chiavi ed un valore, la funzione va ad aggiornare la chiave con il valore passato
-
-            Args:
-                pattern (str): Il percorso della singola chiave da aggiornare, ad esempio: $.tastiera.inline_keyboard[*][*].text
-                valore (any): Il valore da assegnare alla chiave
-
-            Returns:
-                None: Non ritorna alcun valore e non salva in nessun oggetto
-        '''
-        jsonpath_expr = parse(pattern)
-        jsonpath_expr.find(self.data)
-        jsonpath_expr.update(self.data, valore)
+    print(manager.retrieveKey("$.utente.nome"))  # Output: "Andrea"
 
 # json_data = {
 #     "message_id": 22050,
