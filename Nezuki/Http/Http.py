@@ -1,44 +1,136 @@
+import typing
 import requests
-# from Logger import Logger
-from Common import *
-from commonLogId import *
 
-@versione("1.0.7")
+class MethodNotSupported(Exception):
+    """Errore sollevato quando viene usato un metodo non implementato."""
+    pass
+
+class InsufficientInfo(Exception):
+    """Errore sollevato quando le informazioni per formare la request sono insufficienti."""
+    pass
+
 class Http:
-    # Fare una generale review di questo modulo
+    """Classe che permette di effettuare chiamate HTTP."""
+    def __init__(self, protocol: typing.Literal['http', 'https'] = "https", host: str = "", port: int = 0, basePath: str = "", timeout: int = 30):
+        """
+        Inizializza l'oggetto Http che può essere generico oppure specifico specificando i parametri per definire l'API (per semplificare il riuso)
 
-    
-    def __init__(self):
-        self.logger = get_logger()
-        pass
-    
-    
-    def __del__(self) -> None:
-        pass
-    
-    
-    def doRequest(self, host: str, endpoint: str, method: str="get", payload: dict={}, port: int=0, protocol: str="http") -> requests.Response:
-        '''
-            esegue una chiamata http generica in post o in get e torna la risposta
-        '''
-        port = ":{}".format(port) if port != 0 else ""
-        # URL a cui effettuare la richiesta POST
-        url = "{}://{}{}{}".format(protocol, host, port, endpoint)
-        self.logger.debug(f"Chiamata API {url}", extra={'esito_funzionale':-1, "internal": True, 'details':f"{payload}"})
-        # self.logger.debug(f"Eseguo chiamata:\n{method.upper()} {url} - Payload:\n{payload}")
-        mapper = {
+        Args:
+            protocol (http|https, optional): http o https, il protocollo da usare, default https, ignorato se non si usa api_request
+            host (str, optional): definisce host ad esempio google.com
+            port (int, optional): definisce la porta a cui inviare la richiesta
+            basePath (str, optional): definisce una eventuale parte fissa del servizio da richiamare
+            timeout (int, optional): Timeout in secondi per le richieste HTTP. Default è 30.
+        """
+        self.timeout = timeout
+        self.protocol = protocol
+        self.host = host
+        self.port = port
+        self.basePath = basePath
+        if self.basePath is None:
+            self.basePath = ""
+
+        if self.basePath.endswith("/"):
+            self.basePath = self.basePath[:-1]
+
+        self.method_mapper = {
             "get": requests.get,
             "post": requests.post
         }
-        try:
-            # Invia la richiesta POST con i dati JSON
-            response: requests.Response = mapper[method](url,json=payload)
-            if response.status_code > 199 and response.status_code < 300:
-                self.logger.debug(f"Risposta chiamata HTTP {url}", extra={'esito_funzionale':f"HTTP {response.status_code}", "internal": True, 'details':response.text})
-            else:
-                self.logger.error(f"Risposta chiamata HTTP {url}", extra={'esito_funzionale':f"HTTP {response.status_code}", "internal": True, 'details':response.text})
 
-            # Ottieni il JSON di risposta
+    def _build_url(self, protocol: str, host: str, port: int, path: str) -> str:
+        """ Funzione privata che costruisce l'url finale
+        
+        Args:
+            protocol (str): Protocollo da usare
+            host (str): Nome dell'host da chiamare come google.com
+            port (int): Numero della porta da usare, se 0 viene impostta 80 o 443 in base al protocollo
+            path (str): Path del servizio da richiamare, deve iniziare per / e se non presente verrà inserito automaticamente"""
+        # Se il path è vuoto, default a "/"
+        if not path.startswith("/"):
+            path = "/" + path
+        # Se port è 0, usa i default in base al protocollo
+        if port == 0:
+            port = 80 if protocol == "http" else 443
+        return f"{protocol}://{host}:{port}{path}"
+
+    def _perform_request(self, method: str, url: str, payload: dict, headers: dict = None) -> requests.Response:
+        """ Funzione privata che effettua la chiamata HTTP 
+        
+        
+        Args:
+            method (str): Il metodo HTTP ("get" o "post"). Default è "get".
+            url (str): URL da richiamare già compilato con porta e path
+            payload (dict): I dati da inviare con la richiesta. Default è {}.
+            headers (dict, optional): Eventuali header da includere nella richiesta.
+            
+
+        Raises:
+            MethodNotSupported: Se il metodo HTTP non è supportato.
+            InsufficientInfo: Se almeno uno di questi elementi non è stato passato: protocol, host, port
+            Exception: Rilancia eventuali eccezioni sollevate durante la richiesta."""
+        method_lower = method.lower()
+        if payload is None:
+            payload = {}
+        if method_lower not in self.method_mapper:
+            raise MethodNotSupported(f"Il metodo {method} non è supportato. Scegli tra {list(self.method_mapper.keys())}.")
+        try:
+            response = self.method_mapper[method_lower](url, json=payload, headers=headers, timeout=self.timeout)
             return response
         except Exception as e:
-            self.logger.fatal(f"Errore fatale/sconosciuto per la chiamata {url}", extra={'esito_funzionale': f"HTTP 500", "internal": True, 'details': str(e)})
+            raise
+
+    def api_request(self, method: typing.Literal['GET', 'POST'], path: str, payload: dict, headers: dict = None) -> requests.Response:
+        """
+        Esegue una richiesta HTTP specifica di una API o se si fanno diverse chiamate ad uno stesso servizio.
+        
+        Usare questa funzione solo se sono stati dichiarati in precedenza protocol, host, port.
+
+
+        Args:
+            method (GET|POST): Obbligatorio, indicare il metodo della chiamata HTTP
+            path (str): Obbligatorio, indicare il path del servizio da richiamare, deve iniziare per / se assente verrà inserito automaticamente in base al basePath fornito
+            payload (dict): Obbligatorio, indicare il body della chiamata nel formato dizionario Python (JSON) e se non previsto passare dizionario vuoto, passaggio automatico da payload a query parameters
+            headers (dict, optional): Facoltativo, indicare eventuali headers che si intende passare nella chiamata
+
+
+        Raises:
+            MethodNotSupported: Se il metodo HTTP non è supportato.
+            InsufficientInfo: Se almeno uno di questi elementi non è stato passato: protocol, host, port
+            Exception: Rilancia eventuali eccezioni sollevate durante la richiesta.
+        """
+        if not self.protocol or not self.host or self.port == 0:
+            raise InsufficientInfo("Verificare che protocol, host e port siano impostati correttamente.")
+
+        if path.startswith("/"):
+            path = f"{self.basePath}{path}"
+        else:
+            path = f"{self.basePath}/{path}"
+        url = self._build_url(self.protocol, self.host, self.port, path)
+        return self._perform_request(method, url, payload, headers)
+
+    def do_request(self, method: typing.Literal['GET', 'POST'], protocol: typing.Literal['http', 'https'], host: str, port: int, path: str, payload: dict = None, headers: dict = None) -> requests.Response:
+        """
+        Permette di effettuare una chiamata HTTP generica, usando i parametri passati ignorando eventuali parametri creati con l'istanza
+
+        Args:
+            method (str, optional): Il metodo HTTP ("get" o "post"). Default è "get".
+            protocol (str, optional): Il protocollo ("http" o "https"). Default è "http".
+            host (str): L'indirizzo del server.
+            port (int, optional): La porta del server; se 0, viene omessa.
+            path (str): Il path del servizio da richiamare
+            payload (dict, optional): I dati da inviare con la richiesta. Default è {}.
+            headers (dict, optional): Eventuali header da includere nella richiesta.
+
+        Returns:
+            requests.Response: La risposta ottenuta dalla chiamata HTTP.
+        
+        Raises:
+            MethodNotSupported: Se il metodo HTTP non è supportato.
+            Exception: Rilancia eventuali eccezioni sollevate durante la richiesta.
+        """
+        url = self._build_url(protocol, host, port, path)
+        return self._perform_request(method, url, payload, headers)
+
+    def __del__(self) -> None:
+        pass  # Aggiungi qui eventuali operazioni di cleanup se necessario.
