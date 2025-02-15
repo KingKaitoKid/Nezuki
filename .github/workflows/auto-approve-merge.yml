@@ -140,11 +140,14 @@ jobs:
       - name: Genera le note della release
         id: extract_changelog
         run: |
-          awk "/## \[${{ env.VERSION }}\]/,/^## \[/{if (!/^## \[${{ env.VERSION }}\]/) print}" CHANGELOG.md | sed '$d' > release_notes.md
+          awk "/## \[$(cat version.txt)\]/ {flag=1; next} /^## \[/ {flag=0} flag" CHANGELOG.md > release_notes.md
+          if [[ ! -s release_notes.md ]]; then
+            echo "⚠️ Nessun changelog trovato per questa versione!" > release_notes.md
+          fi
           echo "Changelog per la versione ${{ env.VERSION }}:"
           cat release_notes.md
 
-      - name: Commenta la PR con il changelog
+      - name: Commenta la PR con il changelog (solo se non vuoto)
         uses: thollander/actions-comment-pull-request@v2
         with:
           filePath: release_notes.md
