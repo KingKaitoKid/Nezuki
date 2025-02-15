@@ -118,12 +118,14 @@ jobs:
         id: extract_changelog
         run: |
           VERSION=${{ env.VERSION }}
-          awk "/## \[${VERSION}\]/,/^## \[/{if (!/^## \[${VERSION}\]/) print}" CHANGELOG.md | sed '$d' > release_notes.md
+          awk "/## \[${VERSION}\]/ {flag=1; next} /^## \[/ && flag {flag=0} flag" CHANGELOG.md > release_notes.md
           echo "Changelog per la versione ${VERSION}:"
           cat release_notes.md
 
       - name: Crea un nuovo tag per la release
         run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
           git tag v${{ env.VERSION }}
           git push origin v${{ env.VERSION }}
         env:
