@@ -9,6 +9,22 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
 ## [Unreleased]
 ### Overview
 - **Added:**
+  - TBD
+- **Changed:**
+  - TBD
+- **Deprecated:**
+  - TBD
+- **Fixed:**
+  - TBD
+- **Security:**
+  - Niente di specifico da riportare
+
+
+---
+
+## [2.0.7] - 15/02/2025
+### Overview
+- **Added:**
   - Nuovo modulo TMDB per futura integrazione (previsto rilascio in versione 2.5.0).
 - **Changed:**
   - **BREAKING CHANGE** La connessione al DB deve essere passata esplicitamente mediante funzione `connection_params` per rimozione file property

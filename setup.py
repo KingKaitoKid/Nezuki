@@ -5,9 +5,12 @@ from pathlib import Path
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
+__version__ = (this_directory / "version.txt").read_text()
+pypi_v = __version__
+
 setup(
     name='nezuki',  # Nome in minuscolo
-    version='2.0.5',
+    version=pypi_v,
     author='Sergio Catacci',
     author_email='sergio.catacci@icloud.com',
     description='Un pacchetto per la gestione della domotica e servizi server',

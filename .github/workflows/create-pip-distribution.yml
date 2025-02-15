@@ -73,6 +73,10 @@ jobs:
         with:
           github-token: ${{ secrets.NEZUKIINFRABOT }}
 
+      - name: Estrai la versione da version.txt
+        id: get_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
       - name: Commenta sulla PR dopo il rilascio su PyPI
         run: |
           gh pr comment "$PR_URL" --body "🚀 **Nuovo pacchetto pubblicato su PyPI!**  
@@ -97,3 +101,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+
+  release-github:
+    name: Create GitHub Release
+    needs: [build-and-publish]  # Aspetta il completamento della pubblicazione su PyPI
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Estrai la versione da version.txt
+        id: get_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Estrai il Changelog per la versione corrente
+        id: extract_changelog
+        run: |
+          VERSION=${{ env.VERSION }}
+          awk "/## \[${VERSION}\]/ {flag=1; next} /^## \[/ && flag {flag=0} flag" CHANGELOG.md > release_notes.md
+          echo "Changelog per la versione ${VERSION}:"
+          cat release_notes.md
+
+      - name: Crea un nuovo tag per la release
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag v${{ env.VERSION }}
+          git push origin v${{ env.VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Crea una Release su GitHub con Changelog
+        run: |
+          gh release create v${{ env.VERSION }} \
+            --title "Nezuki v${{ env.VERSION }}" \
+            --notes-file release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
