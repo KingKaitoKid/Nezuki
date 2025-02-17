@@ -13,7 +13,7 @@ def mock_env_and_file():
         "host": "smtp.mail.me.com",
         "port": 587,
         "user": "api_infr@icloud.com",
-        "pass": "hcfd-whwq-hkwe-bbdc",
+        "pass": "***",
         "root_email": "api_infr@icloud.com"
     }
 
