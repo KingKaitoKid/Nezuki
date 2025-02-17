@@ -1,111 +1,157 @@
-import smtplib, os
+import smtplib
+import os
+import argparse
+import json
 from email.message import EmailMessage
-from File import File
-from Common import *
-from commonLogId import *
+from nezuki.Logger import get_nezuki_logger
 
+logger = get_nezuki_logger()
 
-@versione("1.0.1")
 class Mail:
     """
-        questa classe permette di inviare delle email
+    Classe per l'invio di email con supporto a SMTP.
+
+    Può leggere i parametri di connessione da:
+    - Argomenti passati alla classe
+    - Un file JSON specificato nella variabile d'ambiente NEZUKIMAIL
+
+    Se nessun parametro è specificato, la variabile d'ambiente è obbligatoria.
     """
 
-    v: str
-    """ Versione modulo Mail """
+    def __init__(self, smtp_config: dict = None):
+        """
+        Inizializza la configurazione SMTP.
 
-    mimeTypeMail: str
-    """ DEPRECATION!! Non verrà più usata in futuro. MimeType del testo della mail, di default è html"""
+        Args:
+            smtp_config (dict, opzionale): Dizionario con i parametri SMTP (host, port, user, pass, root_email).
+                                           Se non fornito, tenta di leggere la variabile d'ambiente `NEZUKIMAIL`.
+        """
+        self.logger = get_nezuki_logger()
 
-    env:str
-    """ Identifica l'ambiente in cui viene eseguito lo script, se non passato viene prende quello della variabile d'ambiente server """
+        if smtp_config is None:
+            json_path = os.getenv("NEZUKIMAIL")
+            if json_path and os.path.isfile(json_path):
+                with open(json_path, "r") as file:
+                    smtp_config = json.load(file)
+                self.logger.info(f"Lettura configurazione SMTP da variabile d'ambiente NEZUKIMAIL ({json_path})", extra={"internal": True})
+            else:
+                raise ValueError("Errore: Né i parametri SMTP né la variabile d'ambiente NEZUKIMAIL sono forniti!")
 
-    senderName:str
-    """ DEPRECATION!! Non verrà più usata in futuro. Come far visualizzare il nome de mittente, default Infrastructure """
+        self.root_mail = smtp_config.get("root_email")
+        self.smtp_host = smtp_config.get("host")
+        self.smtp_port = smtp_config.get("port")
+        self.user = smtp_config.get("user")
+        self.password = smtp_config.get("pass")
 
-    mailPath:str
-    """ Path alla cartella di dove si trova questo script """
+    def build_sender_mail(self, sender_name: str = "Nezuki Mail") -> str:
+        """
+        Genera il formato corretto per il mittente.
 
-    def __init__(self, env:str = "", senderName:str = "Infrastruttura", mimeType:str = "html"):
-        self.logger = get_logger()
-        self.v = "1.0.0"
-        self.env:str = env
-        if self.env == "":
-            self.env = os.getenv("env")
-        self.mimeTypeMail:str = mimeType
-        self.mailPath = os.path.dirname(__file__)
-        self.load_configuration()
+        Args:
+            sender_name (str): Nome visualizzato del mittente. Default: "Nezuki Mail".
 
-    def build_senderMail(self, senderName:str = "Infrastructure") -> str:
-        """ Genera nel formato corretto la visualizzazione del mittente """
-        return "{} <{}>".format(senderName, self.rootMail)
+        Returns:
+            str: Stringa formattata "<Nome> <email>"
+        """
+        return f"{sender_name} <{self.root_mail}>"
 
-    def load_configuration(self):
-        """ Legge le configurazioni correttamente """
-        configF:File = File(self.mailPath)
-        configF.load_property("SMTP", self.env)
-        print("\n\n", configF.config, "\n\n")
-        self.rootMail = configF.config['property']['root_email']
-        self.smtphost = configF.config['property']['host']
-        self.smtpport = configF.config['property']['port']
-        self.user = configF.config['property']['user']
-        self.passw = configF.config['property']['pass']
+    def send_mail(self, sender_name: str, dest: list | str, subject: str, body: str, cc: list | str | None = None):
+        """
+        Invia un'email utilizzando SMTP.
 
-    def sendMail(self, nameSender:str, dest:list|str, obj:str, body:str, Cc:list|str|None=None)->None:
-        """ Invia una mail ad un destinatario o più destinatari, se un destinatario inserire direttamente la mail altrimenti fare un array di stringhe di destinatari."""
+        Args:
+            sender_name (str): Nome del mittente visualizzato.
+            dest (list|str): Destinatario (stringa singola o lista di email).
+            subject (str): Oggetto dell'email.
+            body (str): Contenuto del messaggio.
+            cc (list|str|None): Destinatari in copia (opzionale, stringa o lista).
+        """
         try:
             msg = EmailMessage()
             msg.set_content(body)
+            msg["Subject"] = subject
+            msg["From"] = self.build_sender_mail(sender_name)
+            msg["To"] = ", ".join(dest) if isinstance(dest, list) else dest
+            if cc:
+                msg["Cc"] = ", ".join(cc) if isinstance(cc, list) else cc
 
-            msg['Subject'] = obj
-            msg['From'] = self.build_senderMail(nameSender)
-            if type(dest) is str:
-                msg['To'] = dest
-            else:
-                msg['To'] = ', '.join(dest)
-            
-            if Cc != "" and Cc != None:
-                if type(Cc) is str:
-                    msg['Cc'] = Cc
-                else:
-                    msg['Cc'] = ', '.join(Cc)
+            msg.add_alternative(body, subtype="html")
 
-            msg.add_alternative(body, subtype=self.mimeTypeMail)
-            
-            self.logger.debug(f"Email pronta all'invio", extra={"internal": True, "details": f"{msg}"})
+            self.logger.debug(f"Email pronta all'invio", extra={"internal": True, "details": str(msg)})
 
-            # Prova a inviare la mail con la gestione degli errori
-            with smtplib.SMTP(self.smtphost, self.smtpport) as smtp_server:
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as smtp_server:
                 smtp_server.starttls()
-                smtp_server.login(self.user, self.passw)
+                smtp_server.login(self.user, self.password)
                 smtp_server.send_message(msg)
 
-            self.logger.debug(f"Email inviata con successo", extra={"esito_funzionale": 0, "details": f"{msg}"})
-        
-        except smtplib.SMTPAuthenticationError as e:
-            self.logger.critical(f"Errore di autenticazione SMTP", extra={
-                "esito_funzionale": "SMTP Authentication Error", 
-                "details": str(e)
-            })
-        
-        except smtplib.SMTPRecipientsRefused as e:
-            self.logger.error(f"Destinatari rifiutati", extra={
-                "esito_funzionale": "SMTP Recipients Refused",
-                "details": str(e)
-            })
-        
+            self.logger.info(f"Email inviata con successo", extra={"internal": True, "details": str(msg)})
+
         except smtplib.SMTPException as e:
-            self.logger.critical(f"Errore generale SMTP", extra={
-                "esito_funzionale": "SMTP Error",
-                "details": str(e)
-            })
+            self.logger.error(f"Errore SMTP durante l'invio", extra={"internal": True, "details": str(e)})
 
-        except Exception as e:
-            self.logger.critical(f"Errore generico durante l'invio dell'email", extra={
-                "esito_funzionale": "SMTP Generic Error",
-                "details": str(e)
-            })
 
-# mm = Mail("DEV")
-# mm.sendMail(nameSender="Test positional sendMail", Cc=["andreacolangelo04@icloud.com"], dest=["djstrix@me.com"], obj="Test VSCode sendMail", body="Test di invio mail con array di destinatario e Cc array, test di logica")
-# mm.sendMail(nameSender="Test positional sendMail", Cc="andreacolangelo04@icloud.com", dest="djstrix@me.com", obj="Test VSCode sendMail", body="Test di invio mail con stringa di destinatario e Cc stringa, test di logica")
+# --- CLI COMMAND ---
+def main():
+    """
+    Interfaccia a riga di comando per inviare email.
+
+    Se non vengono forniti parametri SMTP, utilizza la configurazione dalla variabile d'ambiente `NEZUKIMAIL`.
+    """
+    parser = argparse.ArgumentParser(description="Modulo per inviare email con SMTP.")
+
+    # Parametri per il server SMTP (opzionali, si può usare NEZUKIMAIL)
+    parser.add_argument("--smtp-host", type=str, help="Hostname del server SMTP")
+    parser.add_argument("--smtp-port", type=int, help="Porta SMTP")
+    parser.add_argument("--smtp-user", type=str, help="Username SMTP")
+    parser.add_argument("--smtp-pass", type=str, help="Password SMTP")
+    parser.add_argument("--root-email", type=str, help="Email principale per il mittente")
+
+    # Parametri per il messaggio
+    parser.add_argument("--from", dest="sender_name", type=str, required=True, help="Nome del mittente")
+    parser.add_argument("--to", type=str, required=True, help="Destinatario (singolo o multiplo, separati da virgole)")
+    parser.add_argument("--subject", type=str, required=True, help="Oggetto dell'email")
+    parser.add_argument("--body", type=str, required=True, help="Corpo dell'email")
+    parser.add_argument("--cc", type=str, default=None, help="Destinatari in copia (opzionale, separati da virgola)")
+
+    args = parser.parse_args()
+
+    # Se i parametri SMTP sono passati, usiamo quelli, altrimenti leggiamo NEZUKIMAIL
+    # Se i parametri SMTP sono passati, usiamo quelli, altrimenti leggiamo NEZUKIMAIL
+    smtp_config = None
+
+    if args.smtp_host and args.smtp_port and args.smtp_user and args.smtp_pass and args.root_email:
+        smtp_config = {
+            "host": args.smtp_host,
+            "port": args.smtp_port,
+            "user": args.smtp_user,
+            "pass": args.smtp_pass,
+            "root_email": args.root_email
+        }
+    else:
+        # Leggiamo la variabile d'ambiente NEZUKIMAIL
+        json_path = os.getenv("NEZUKIMAIL")
+        if json_path and os.path.isfile(json_path):
+            with open(json_path, "r") as file:
+                smtp_config = json.load(file)
+            logger.info(f"Lettura configurazione SMTP da variabile d'ambiente NEZUKIMAIL ({json_path})", extra={"internal": True})
+        else:
+            raise ValueError("Errore: Né i parametri SMTP né la variabile d'ambiente NEZUKIMAIL sono forniti!")
+
+        # Creazione client email
+        mail_client = Mail(smtp_config)
+        recipients = args.to.split(",")
+        cc_recipients = args.cc.split(",") if args.cc else None
+
+
+    # Invio mail
+    mail_client.send_mail(
+        sender_name=args.sender_name,
+        dest=recipients,
+        subject=args.subject,
+        body=args.body,
+        cc=cc_recipients
+    )
+
+
+if __name__ == "__main__":
+    main()

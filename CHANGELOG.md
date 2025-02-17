@@ -9,13 +9,13 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
 ## [Unreleased]
 ### Overview
 - **Added:**
-  - TBD
+  - **Mail** è possibile usare il modulo Mail per inviare delle Mail, anche da riga di comando, ulteriori informazioni aprire la doc di Mail, **obbligatorio** impostare NEZUKIMAIL (path assoluto al JSON di configurazione)
 - **Changed:**
-  - TBD
+  - **Logger** Modificato il path della configurazione, di default va a leggere la variabile d'ambiente NEZUKILOGS, è obbligatorio impostarla, deve avere il path assoluto alfile JSON di configuazione se non viene passato in modo esplicito nel modulo
 - **Deprecated:**
-  - TBD
+  - Niente da riportare
 - **Fixed:**
-  - TBD
+  - Niente da riportare
 - **Security:**
   - Niente di specifico da riportare
 
