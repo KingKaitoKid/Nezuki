@@ -54,8 +54,8 @@ logger.debug("Questo è un log interno di debug.", extra={"internal": True})
 
 ---
 
-### 📌 **2. Utilizzare il logger di default**
-Se nessuna configurazione è fornita, i moduli di Nezuki utilizzeranno un logger predefinito con configurazione base:
+### 📌 **2. Utilizzare il logger senza parametri**
+Se nessuna configurazione è fornita, verrà usata una variabile d'ambiente `NEZUKILOGS` in cui ci sono le informazioni minime per il funzionamento dei log, la configurazione minima è presentata nel punto 1
 
 ```python
 from nezuki.Logger import get_nezuki_logger
@@ -64,10 +64,7 @@ logger = get_nezuki_logger()
 
 logger.info("Messaggio informativo di default")
 logger.error("Errore critico!")
-```
-
-🔹 **Il logger di default scrive in:**  
-📂 `/common_libraries/NezukiLogs/module_logs.log`
+``` 
 
 ---
 
