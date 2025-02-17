@@ -118,3 +118,5 @@ def test_mail_send_auth_error(mocker, mail_client):
     # ✅ Assicura che il logger abbia registrato l'errore
     mock_logger.assert_called_once()
     assert "Errore SMTP durante l'invio" in mock_logger.call_args[0][0]
+
+    
