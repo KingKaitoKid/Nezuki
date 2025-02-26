@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import inspect
+import json
 from logging.handlers import TimedRotatingFileHandler
 from coloredlogs import ColoredFormatter
 
@@ -101,15 +102,10 @@ def get_nezuki_logger():
     """Restituisce il logger globale di Nezuki. Se non è configurato, usa un logger di default."""
     global _nezuki_logger
     if _nezuki_logger is None:
-        default_config = {
-            "file": {
-                "filename": "/common_libraries/NezukiLogs/module_logs.log",
-                "maxBytes": 100 * 1024 * 1024,
-                "backupCount": 3,
-                "when": "D",
-                "interval": 30
-            }
-        }
+        json_path = os.getenv("NEZUKILOGS")
+        print(json_path)
+        with open(json_path, "r") as f:
+            default_config = json.load(f)
         _nezuki_logger = _create_logger(default_config)
     return _nezuki_logger
 
@@ -211,19 +207,3 @@ class NezukiLogger:
 
 def get_logger(config=None):
     return NezukiLogger(config).logger
-
-# --- TEST MINIMALE ---
-if __name__ == "__main__":
-    custom_config = {
-        "file": {
-            "filename": "/common_libraries/Nezuki/Nezuki3.log",
-            "maxBytes": 100 * 1024 * 1024,
-            "backupCount": 3,
-            "when": "D",
-            "interval": 30
-        }
-    }
-    logger = get_logger(custom_config)
-
-    logger.info("Messaggio utente normale.")
-    logger.debug("Messaggio tecnico interno.", extra={"internal": True})
