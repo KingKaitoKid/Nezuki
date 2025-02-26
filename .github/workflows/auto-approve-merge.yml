@@ -10,23 +10,6 @@ permissions:
   contents: write
 
 jobs:
-  # ✅ Step 1: Linting e Code Style
-  lint:
-    name: Linting and Code Style Check
-    runs-on: self-hosted
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install linting tools
-        run: |
-          source /common_libraries/.venv_test/bin/activate
-          pip install black flake8 autopep8
-
-      - name: Format Code with Black (Auto-fix)
-        run: black nezuki/
-
-
   # ✅ Step 2: Analisi di Sicurezza (Non Bloccante)
   security-check:
     name: Security Scan
@@ -63,7 +46,6 @@ jobs:
   test:
     name: Running Unit Test
     runs-on: self-hosted
-    needs: [lint]  # I test partono solo se linting e security passano
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
