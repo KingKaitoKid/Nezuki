@@ -9,6 +9,22 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
 ## [Unreleased]
 ### Overview
 - **Added:**
+  - Niente da riportare
+- **Changed:**
+  - Niente da riportare
+- **Deprecated:**
+  - Niente da riportare
+- **Fixed:**
+  - Niente da riportare
+- **Security:**
+  - Niente di specifico da riportare
+
+
+---
+
+## [2.0.9]
+### Overview
+- **Added:**
   - **Mail** è possibile usare il modulo Mail per inviare delle Mail, anche da riga di comando, ulteriori informazioni aprire la doc di Mail, **obbligatorio** impostare NEZUKIMAIL (path assoluto al JSON di configurazione)
   - **EncoderDecoder** offre la possibilità di generare e decodificare messaggi cifrati (algoritmo permettendo), fa parte della release 2.0.9 del pip
 - **Changed:**
