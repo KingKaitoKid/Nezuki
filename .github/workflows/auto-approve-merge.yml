@@ -20,6 +20,7 @@ jobs:
 
       - name: Install linting tools
         run: |
+          source /common_libraries/.venv_test/bin/activate
           pip install black flake8 autopep8
 
       - name: Format Code with Black (Auto-fix)
@@ -37,6 +38,7 @@ jobs:
 
       - name: Install security tools
         run: |
+          source /common_libraries/.venv_test/bin/activate
           pip install bandit safety
 
       - name: Run Bandit (Security Scan)
@@ -73,6 +75,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          source /common_libraries/.venv_test/bin/activate
           pip install -r requirements.txt
           pip install pytest pytest-mock
 

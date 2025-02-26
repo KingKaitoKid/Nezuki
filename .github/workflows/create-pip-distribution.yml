@@ -25,6 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          source /common_libraries/.venv_test/bin/activate
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
@@ -47,7 +48,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install packaging tools
-        run: pip install setuptools wheel twine
+        run: |
+          source /common_libraries/.venv_test/bin/activate
+          pip install setuptools wheel twine
 
       - name: Build Package
         run: |
