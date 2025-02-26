@@ -33,6 +33,7 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
   - Niente da riportare
 - **Fixed:**
   - Niente da riportare
+
 - **Security:**
   - Niente di specifico da riportare
 
