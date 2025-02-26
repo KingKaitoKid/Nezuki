@@ -10,6 +10,7 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
 ### Overview
 - **Added:**
   - **Mail** è possibile usare il modulo Mail per inviare delle Mail, anche da riga di comando, ulteriori informazioni aprire la doc di Mail, **obbligatorio** impostare NEZUKIMAIL (path assoluto al JSON di configurazione)
+  - **EncoderDecoder** offre la possibilità di generare e decodificare messaggi cifrati (algoritmo permettendo), fa parte della release 2.0.9 del pip
 - **Changed:**
   - **Logger** Modificato il path della configurazione, di default va a leggere la variabile d'ambiente NEZUKILOGS, è obbligatorio impostarla, deve avere il path assoluto alfile JSON di configuazione se non viene passato in modo esplicito nel modulo
 - **Deprecated:**
