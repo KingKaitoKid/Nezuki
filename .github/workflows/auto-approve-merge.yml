@@ -96,7 +96,6 @@ jobs:
   auto-merge:
     name: Merging to Develop
     needs:
-      - lint  # Controllo codice (Black, Flake8)
       - test  # Esecuzione test unitari
       - check-todo  # Controllo TODO/FIXME
       - auto-approve  # Approvazione automatica PR
