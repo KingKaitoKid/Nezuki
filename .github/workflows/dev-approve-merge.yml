@@ -58,7 +58,9 @@ jobs:
           pip install pytest pytest-mock
 
       - name: Run tests
-        run: pytest --cov=nezuki --cov-report=term-missing
+        run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          pytest --cov=nezuki --cov-report=term-missing
 
   # ✅ Step 4: Controllo TODO e FIXMEs nel codice
   check-todo:
