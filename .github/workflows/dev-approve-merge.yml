@@ -21,7 +21,7 @@ jobs:
 
       - name: Install security tools
         run: |
-          source /server/git_pipeline/workflows/git_py_venv/bin/activate
+          source /server/git_pipeline/.github/workflows/git_py_venv/bin/activate
           pip install bandit safety
 
       - name: Run Bandit (Security Scan)
@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          source /server/git_pipeline/workflows/git_py_venv/bin/activate
+          source /server/git_pipeline/.github/workflows/git_py_venv/bin/activate
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
