@@ -1,0 +1,152 @@
+name: Pull Request Check
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  # ✅ Step 2: Analisi di Sicurezza (Non Bloccante)
+  security-check:
+    name: Security Scan
+    runs-on: self-hosted
+    continue-on-error: true  # <-- Questo permette al job di fallire senza fermare l'intero workflow
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install security tools
+        run: |
+          source /server/git_pipeline/workflows/git_py_venv/bin/activate
+          pip install bandit safety
+
+      - name: Run Bandit (Security Scan)
+        run: bandit -r nezuki/ -lll | tee bandit_report.txt || true
+
+      - name: Check for vulnerable dependencies (Safety)
+        run: safety check --full-report | tee safety_report.txt || true
+
+      - name: Save Security Report
+        run: |
+          echo "## 🔍 Security Scan Report" > security_summary.md
+          echo "### 📌 Bandit Report:" >> security_summary.md
+          cat bandit_report.txt >> security_summary.md
+          echo "" >> security_summary.md
+
+      - name: Comment Security Report on PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: security_summary.md
+
+  # ✅ Step 3: Test Unitari
+  test:
+    name: Running Unit Test
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          source /server/git_pipeline/workflows/git_py_venv/bin/activate
+          pip install -r requirements.txt
+          pip install pytest pytest-mock
+
+      - name: Run tests
+        run: pytest --cov=nezuki --cov-report=term-missing
+
+  # ✅ Step 4: Controllo TODO e FIXMEs nel codice
+  check-todo:
+    name: Check for TODOs/FIXMEs
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Search for TODOs
+        run: |
+          if grep -rniE '\b(TODO|FIXME)\b' nezuki/; then
+            echo "❌ Found TODOs or FIXMEs in the code! Please resolve them before merging."
+            exit 1
+          else
+            echo "✅ No TODOs or FIXMEs found."
+          fi
+
+  # ✅ Step 5: Approva la PR se tutto è passato
+  auto-approve:
+    name: Approving PR
+    needs: [test, check-todo]  # Approva solo se test e check-todo passano
+    runs-on: self-hosted
+    steps:
+      - name: Approve PR
+        uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.NEZUKIINFRABOT }}
+
+  # ✅ Step 6: Merge automatico su develop
+  auto-merge:
+    name: Merging to Develop
+    needs:
+      - test  # Esecuzione test unitari
+      - check-todo  # Controllo TODO/FIXME
+      - auto-approve  # Approvazione automatica PR
+
+    runs-on: self-hosted
+    steps:
+      - name: Enable Auto Merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+  # ✅ Step 3: Prepara il Changelog e commenta la PR
+  prepare-changelog:
+    name: Extract and Post Changelog
+    needs: [auto-merge]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Estrai la versione corrente
+        id: get_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Genera le note della release
+        id: extract_changelog
+        run: |
+          awk "/## \[$(cat version.txt)\]/ {flag=1; next} /^## \[/ {flag=0} flag" CHANGELOG.md > release_notes.md
+          if [[ ! -s release_notes.md ]]; then
+            echo "⚠️ Nessun changelog trovato per questa versione!" > release_notes.md
+          fi
+          echo "Changelog per la versione ${{ env.VERSION }}:"
+          cat release_notes.md
+
+      - name: Commenta la PR con il changelog (solo se non vuoto)
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: release_notes.md
+
+  # ✅ Step 6: Rimuovi il branch di partenza (NON BLOCCANTE)
+  delete-branch:
+    name: Delete Source Branch
+    needs: [auto-merge]
+    runs-on: self-hosted
+    continue-on-error: true  # ❗ NON BLOCCANTE
+    steps:
+      - name: Delete Branch
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Eliminando il branch: $BRANCH_NAME"
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/$BRANCH_NAME || echo "⚠️ Errore nella rimozione, ma la pipeline continua!"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

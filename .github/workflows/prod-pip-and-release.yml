@@ -1,0 +1,143 @@
+name: Release Pipeline for Main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # ✅ Step 1: Test Unitari
+  test:
+    name: Run Tests 
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          source /server/git_pipeline/workflows/git_py_venv/bin/activate
+          pip install -r requirements.txt
+          pip install pytest pytest-mock
+
+      - name: Run tests
+        run: pytest --cov=nezuki --cov-report=term-missing
+
+
+  # ✅ Step 2: Build e Publish su PyPI
+  build-and-publish:
+    name: Build & Publish Package
+    needs: [test]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install packaging tools
+        run: |
+          source /server/git_pipeline/workflows/git_py_venv/bin/activate
+          pip install setuptools wheel twine
+
+      - name: Build Package
+        run: |
+          rm -rf dist  # ✅ Pulisce la cartella dist prima di creare il pacchetto
+          python setup.py sdist bdist_wheel
+
+      - name: Upload Package to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          twine upload dist/*
+
+  # ✅ Step 3: Approva la PR se tutto è passato
+  auto-approve:
+    name: Approving PR
+    needs:
+      - build-and-publish  # Approva solo se test e check-todo passano
+    runs-on: self-hosted
+    steps:
+      - name: Approve PR
+        uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.NEZUKIINFRABOT }}
+
+      - name: Estrai la versione da version.txt
+        id: get_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Commenta sulla PR dopo il rilascio su PyPI
+        run: |
+          gh pr comment "$PR_URL" --body "🚀 **Nuovo pacchetto pubblicato su PyPI!**  
+          Puoi aggiornare alla nuova versione eseguendo:  
+          \`\`\`sh  
+          pip3 install --upgrade nezuki  
+          \`\`\`  
+          [Visualizza su PyPI](https://pypi.org/project/nezuki/)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+  # ✅ Step 4: Merge automatico su develop
+  auto-merge:
+    name: Merging to Main (PROD)
+    needs:
+      - auto-approve
+    runs-on: self-hosted
+    steps:
+      - name: Enable Auto Merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+  release-github:
+    name: Create GitHub Release
+    needs: [build-and-publish]  # Aspetta il completamento della pubblicazione su PyPI
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Estrai la versione da version.txt
+        id: get_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Estrai il Changelog per la versione corrente
+        id: extract_changelog
+        run: |
+          VERSION=${{ env.VERSION }}
+          awk "/## \[${VERSION}\]/ {flag=1; next} /^## \[/ && flag {flag=0} flag" CHANGELOG.md > release_notes.md
+          echo "Changelog per la versione ${VERSION}:"
+          cat release_notes.md
+
+      - name: Crea un nuovo tag per la release
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag v${{ env.VERSION }}
+          git push origin v${{ env.VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Crea una Release su GitHub con Changelog
+        run: |
+          gh release create v${{ env.VERSION }} \
+            --title "Nezuki v${{ env.VERSION }}" \
+            --notes-file release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
