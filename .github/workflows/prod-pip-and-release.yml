@@ -61,6 +61,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           twine upload dist/*
 
   # ✅ Step 3: Approva la PR se tutto è passato
