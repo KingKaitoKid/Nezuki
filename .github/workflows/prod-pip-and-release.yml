@@ -26,11 +26,14 @@ jobs:
       - name: Install dependencies
         run: |
           source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
       - name: Run tests
-        run: pytest --cov=nezuki --cov-report=term-missing
+        run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          pytest --cov=nezuki --cov-report=term-missing
 
 
   # ✅ Step 2: Build e Publish su PyPI
@@ -41,11 +44,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
 
       - name: Install packaging tools
         run: |
