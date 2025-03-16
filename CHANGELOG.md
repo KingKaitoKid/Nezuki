@@ -4,9 +4,23 @@ Tutte le modifiche a questo progetto saranno documentate in questo file.
 
 Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) e al Semantic Versioning.
 
+## [Unreleased]
+### Overview
+- **Added:**
+  - Niente di specifico da riportare
+- **Changed:**
+  - Niente da riportare
+- **Deprecated:**
+  - Niente da riportare
+- **Fixed:**
+  - Niente di specifico da riportare
+- **Security:**
+  - Niente di specifico da riportare
+
+
 ---
 
-## [Unreleased]
+## [2.0.10]
 ### Overview
 - **Added:**
   - **Database**
