@@ -21,7 +21,7 @@ jobs:
 
       - name: Install security tools
         run: |
-          source /common_libraries/.venv_test/bin/activate
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           pip install bandit safety
 
       - name: Run Bandit (Security Scan)
@@ -50,19 +50,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      - name: Set Environment Variables
+        run: |
+          echo "CONFIG_PATH=/server/config/" >> $GITHUB_ENV
+          echo "NEZUKILOGS=/server/config/logs.json" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
-          source /common_libraries/.venv_test/bin/activate
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
       - name: Run tests
-        run: pytest --cov=nezuki --cov-report=term-missing
+        run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          pytest --cov=nezuki --cov-report=term-missing
 
   # ✅ Step 4: Controllo TODO e FIXMEs nel codice
   check-todo:

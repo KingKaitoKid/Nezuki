@@ -1,3 +1,5 @@
+import datetime
+import json
 from re import S
 import typing
 import mysql.connector
@@ -39,7 +41,7 @@ class Database:
         self.auto_load = False
         self.errorDBConnection = False
 
-    def connection_params(self, host: str, user: str, password: str) -> dict:
+    def connection_params(self, host: str, user: str, password: str, port: int=None) -> dict:
         """
         Configura manualmente i parametri di connessione al database.
 
@@ -47,16 +49,26 @@ class Database:
             host (str): Indirizzo del server DB.
             user (str): Nome utente per la connessione.
             password (str): Password per la connessione.
+            port (int): Porta da usare, se non passata verrà usata la porta standard per il tipo di DB
 
         Returns:
             dict: I parametri di connessione impostati (potresti voler ritornare il dizionario o semplicemente aggiornare l'oggetto).
         """
         self.auto_load = False
+
+        # Gestiamo la porta standard
+        if port is None:
+            if self.db_type == "mysql":
+                port = 3306
+            elif self.db_type == "postgresql":
+                port: 5432
+
         self.configJSONNew: dict = {
             "database": self.database,
             "host": host,
             "user": user,
-            "password": password
+            "password": password,
+            "port": port
         }
         try:
             logger.debug("Avvio la connessione al DB con i parametri", extra={"internal": True})
@@ -140,13 +152,66 @@ class Database:
 
             return result_dict
         else:
-            return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita"}        
+            return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita"}
+        
+    def doQueryNamed(self, query: str, params=None) -> dict:
+        """
+        Esegue una query sul database e restituisce i risultati con i nomi delle colonne.
+
+        Args:
+            query (str): La query da eseguire. Se sono presenti parametri, utilizzare %s per placeholder.
+            params: Parametri da passare alla query, nel formato `tuple`.
+
+        Returns:
+            dict: Un dizionario con la struttura:
+                {"ok": Bool, "results": list[dict], "rows_affected": int, "error": None|str, "lastrowid": Optional[int]}
+        """
+
+        if not self.errorDBConnection:
+            query = self.__sanitize_string__(query)
+            result_dict: dict = {"ok": False, "results": [], "rows_affected": -1, "error": "Init phase..."}
+
+            try:
+                if self.db_type == "postgresql":
+                    cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)  # Restituisce dizionari
+                else:
+                    cursor = self.connection.cursor(buffered=True)
+
+                results = []
+                lastrowid = None
+
+                cursor.execute(query, params)
+
+                if cursor.description:  # Se la query ha un risultato (es. SELECT)
+                    if self.db_type == "postgresql":
+                        results = cursor.fetchall()  # ✅ Ora results contiene dati
+                    else:
+                        columns = [desc[0] for desc in cursor.description]
+                        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+                    # Conversione datetime -> ISO string
+                    for row in results:
+                        for key, value in row.items():
+                            if isinstance(value, datetime.datetime):
+                                row[key] = value.isoformat()
+
+                if any(x in query.upper().split(" ")[0] for x in ["INSERT", "UPDATE", "DELETE"]):
+                    self.connection.commit()
+                    lastrowid = cursor.lastrowid if self.db_type == "mysql" else None
+
+                rows = cursor.rowcount
+                cursor.close()
+                result_dict = {"ok": True, "results": results, "rows_affected": rows, "error": None, "lastrowid": lastrowid}
+
+            except Exception as e:
+                cursor.close()
+                result_dict = {"ok": False, "results": [], "rows_affected": -1, "error": str(e)}
+
+            return result_dict
+        else:
+            return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita"}
     
     def __del__(self) -> None:
         """ Chiude la connessione al DB se è stata inizializzata """
         if hasattr(self, "connection") and self.connection:
             self.connection.close()
-
-# ddb = Database(database="postgres", db_type="postgresql")
-
-# ddb.connection_params("kaito.link:25432", "kaito", "kaitokid11")
