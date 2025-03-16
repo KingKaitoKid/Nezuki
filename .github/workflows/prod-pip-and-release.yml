@@ -18,14 +18,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      - name: Set Environment Variables
+        run: |
+          echo "CONFIG_PATH=/server/config/" >> $GITHUB_ENV
+          echo "NEZUKILOGS=/server/config/logs.json" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
-          source /common_libraries/.venv_test/bin/activate
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
@@ -45,11 +45,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install packaging tools
         run: |
-          source /common_libraries/.venv_test/bin/activate
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           pip install setuptools wheel twine
 
       - name: Build Package

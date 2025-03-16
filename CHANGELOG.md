@@ -9,13 +9,15 @@ Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/
 ## [Unreleased]
 ### Overview
 - **Added:**
-  - Niente da riportare
+  - **Database**
+    - Nuova funzione `doQueryNamed`, identica a `doQuery` ma i risultati hanno i nomi alle colonne [2.0.10]
 - **Changed:**
   - Niente da riportare
 - **Deprecated:**
   - Niente da riportare
 - **Fixed:**
-  - Niente da riportare
+  - **Databse**
+    - la funzione `connection_params` ora accetta la porta in input, se omessa prende la porta standard per il tipo di DB, ora usare porte custom non genera più l'errore `Unknown host` oppure `Cannot resolve address` [2.0.10]
 - **Security:**
   - Niente di specifico da riportare
 
