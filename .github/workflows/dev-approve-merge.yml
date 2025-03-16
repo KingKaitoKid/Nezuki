@@ -50,8 +50,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Debug Environment Variables
-        run: env
+      - name: Set Environment Variables
+        run: |
+          echo "CONFIG_PATH=/server/config/" >> $GITHUB_ENV
+          echo "NEZUKILOGS=/server/config/logs.json" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |

@@ -18,10 +18,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+      - name: Set Environment Variables
+        run: |
+          echo "CONFIG_PATH=/server/config/" >> $GITHUB_ENV
+          echo "NEZUKILOGS=/server/config/logs.json" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
