@@ -54,6 +54,7 @@ jobs:
         run: |
           echo "CONFIG_PATH=/server/config/" >> $GITHUB_ENV
           echo "NEZUKILOGS=/server/config/logs.json" >> $GITHUB_ENV
+          echo "NEZUKIDB=/server/config/db.json" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
