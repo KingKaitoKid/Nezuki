@@ -5,6 +5,7 @@ from re import S
 import typing
 import mysql.connector
 import psycopg2, psycopg2.extras
+import asyncpg
 from nezuki.Logger import get_nezuki_logger
 
 logger = get_nezuki_logger()  # Usa il logger corretto
@@ -42,6 +43,19 @@ class Database:
         self.auto_load = False
         self.errorDBConnection = False
         self.configJSONNew = None
+        self.async_conn = False
+
+    async def as_start_connection(self):
+        """
+        Avvia la connessione al Database Asincrona
+        """
+        self.async_conn = True
+        self.__load_configuration()
+        if self.db_type == "postgresql":
+            logger.debug("Avvio connessione PostgreSQL", extra={"internal": True})
+            return asyncpg.connect(**self.configJSONNew)
+        else:
+            raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
 
     def connection_params(self, host: str, user: str, password: str, port: int=None) -> dict:
         """
@@ -101,11 +115,12 @@ class Database:
         json_config = JsonManager()
         db_config:str = os.getenv('NEZUKIDB')
         self.configJSONNew = json_config.read_json(db_config)
-        try:
-            self.connection = self.start_connection()
-        except Exception as e:
-            logger.error("Property caricate, connessione fallita", extra={"internal": True})
-            self.errorDBConnection = True
+        if not self.async_conn:
+            try:
+                self.connection = self.start_connection()
+            except Exception as e:
+                logger.error("Property caricate, connessione fallita", extra={"internal": True})
+                self.errorDBConnection = True
     
     def __sanitize_string__(self, text: str) -> str:
         """
