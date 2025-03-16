@@ -52,6 +52,7 @@ jobs:
 
       - name: Build Package
         run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           rm -rf dist  # ✅ Pulisce la cartella dist prima di creare il pacchetto
           python setup.py sdist bdist_wheel
 
