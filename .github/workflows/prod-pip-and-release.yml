@@ -26,11 +26,14 @@ jobs:
       - name: Install dependencies
         run: |
           source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-mock
 
       - name: Run tests
-        run: pytest --cov=nezuki --cov-report=term-missing
+        run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
+          pytest --cov=nezuki --cov-report=term-missing
 
 
   # ✅ Step 2: Build e Publish su PyPI
@@ -42,11 +45,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
       - name: Install packaging tools
         run: |
           source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
@@ -54,6 +52,7 @@ jobs:
 
       - name: Build Package
         run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           rm -rf dist  # ✅ Pulisce la cartella dist prima di creare il pacchetto
           python setup.py sdist bdist_wheel
 
@@ -62,6 +61,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
+          source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
           twine upload dist/*
 
   # ✅ Step 3: Approva la PR se tutto è passato

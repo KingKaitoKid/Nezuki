@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 from re import S
 import typing
 import mysql.connector
@@ -40,6 +41,7 @@ class Database:
         self.db_type = db_type.lower()
         self.auto_load = False
         self.errorDBConnection = False
+        self.configJSONNew = None
 
     def connection_params(self, host: str, user: str, password: str, port: int=None) -> dict:
         """
@@ -84,12 +86,26 @@ class Database:
         Avvia la connessione al Database
         """
         if self.db_type == "mysql":
+            logger.debug("Avvio connessione MySQL", extra={"internal": True})
             return mysql.connector.connect(**self.configJSONNew)
         elif self.db_type == "postgresql":
+            logger.debug("Avvio connessione PostgreSQL", extra={"internal": True})
             return psycopg2.connect(**self.configJSONNew)
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
         
+    def __load_configuration(self):
+        logger.info("Carico connessione al DB da $NEZUKIDB", extra={"internal": True})
+        self.auto_load = True
+        from nezuki.JsonManager import JsonManager
+        json_config = JsonManager()
+        db_config:str = os.getenv('NEZUKIDB')
+        self.configJSONNew = json_config.read_json(db_config)
+        try:
+            self.connection = self.start_connection()
+        except Exception as e:
+            logger.error("Property caricate, connessione fallita", extra={"internal": True})
+            self.errorDBConnection = True
     
     def __sanitize_string__(self, text: str) -> str:
         """
@@ -116,7 +132,17 @@ class Database:
             dict: Un dizionario con la struttura:
                   {"ok": Bool, "results": list, "rows_affected": int, "error": None|str, "lastrowid": Optional[int]}
         """
-        if not self.errorDBConnection:
+        if self.configJSONNew is None:
+            self.__load_configuration()
+
+            if self.auto_load:
+                msg = "Connessione al DB fatta mediante variabile env NEZUKIDB"
+                if not self.errorDBConnection:
+                    logger.debug(msg, extra={"internal": True})
+                else:
+                    logger.error(msg, extra={"internal": True})
+
+        if not self.errorDBConnection and self.configJSONNew is not None:
             query = self.__sanitize_string__(query)
             result_dict: dict = {"ok": False, "results": [], "rows_affected": -1, "error": "Init phase..."}
             cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor) if self.db_type == "postgresql" else self.connection.cursor(buffered=True)
@@ -167,7 +193,17 @@ class Database:
                 {"ok": Bool, "results": list[dict], "rows_affected": int, "error": None|str, "lastrowid": Optional[int]}
         """
 
-        if not self.errorDBConnection:
+        if self.configJSONNew is None:
+            self.__load_configuration()
+
+            if self.auto_load:
+                msg = "Connessione al DB fatta mediante variabile env NEZUKIDB"
+                if not self.errorDBConnection:
+                    logger.debug(msg, extra={"internal": True})
+                else:
+                    logger.error(msg, extra={"internal": True})
+
+        if not self.errorDBConnection and self.configJSONNew is not None:
             query = self.__sanitize_string__(query)
             result_dict: dict = {"ok": False, "results": [], "rows_affected": -1, "error": "Init phase..."}
 
@@ -209,6 +245,10 @@ class Database:
 
             return result_dict
         else:
+            try:
+                pass
+            except Exception as e:
+                return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita, fallito property connessione"}
             return {"ok": False, "results": [], "rows_affected": -1, "error": "Connessione al DB fallita"}
     
     def __del__(self) -> None:

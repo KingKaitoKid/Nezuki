@@ -4,12 +4,12 @@ from nezuki.Database import Database
 @pytest.fixture
 def db():
     """Crea un'istanza del Database senza connessione attiva"""
-    return Database(database="test_db", db_type="mysql")
+    return Database(database="monitoring", db_type="postgresql")
 
 def test_init(db):
     """Verifica che l'istanza venga creata correttamente"""
-    assert db.database == "test_db"
-    assert db.db_type == "mysql"
+    assert db.database == "monitoring"
+    assert db.db_type == "postgresql"
     assert db.auto_load is False
     assert db.errorDBConnection is False
 
@@ -19,7 +19,7 @@ def test_connection_params(mocker, db):
     
     db.connection_params("localhost", "user", "password")
     
-    assert db.configJSONNew["database"] == "test_db"
+    assert db.configJSONNew["database"] == "monitoring"
     assert db.configJSONNew["host"] == "localhost"
     assert db.configJSONNew["user"] == "user"
     assert db.configJSONNew["password"] == "password"
