@@ -50,6 +50,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug Environment Variables
+        run: env
+
       - name: Install dependencies
         run: |
           source /server/git_pipeline/.github/workflows/.git_py_venv/bin/activate
