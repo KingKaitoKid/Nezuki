@@ -4,12 +4,14 @@ Tutte le modifiche a questo progetto saranno documentate in questo file.
 
 Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) e al Semantic Versioning.
 
-## [Unreleased]
+## [2.0.11]
 ### Overview
 - **Added:**
-  - Niente di specifico da riportare
+  - **MonitoringSystemCore**
+    - Servizio alla base dei server per effettuare monitoraggio su risorse hardware, non fa parte del pacchetto pip
 - **Changed:**
-  - Niente da riportare
+  - **Database**
+    - Lettura connessione a DB da property se non esplicitamente passata
 - **Deprecated:**
   - Niente da riportare
 - **Fixed:**
