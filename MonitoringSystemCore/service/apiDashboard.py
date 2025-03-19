@@ -1,4 +1,5 @@
 import asyncio, datetime
+import os
 from typing import List, Optional
 from fastapi import FastAPI, WebSocket, Query, WebSocketDisconnect
 import json
@@ -161,6 +162,7 @@ async def get_metrics(
     limit: int = Query(10, ge=1), 
     node_id: Optional[int] = None
 ):
+    logger.debug(f"{os.getenv('NEZUKIDB')} ENV VAR")
     """Endpoint HTTP per recuperare le metriche più recenti con filtri opzionali"""
     latest_metrics = await fetch_latest_metrics(node_id, limit)
     return {"nodes": latest_metrics}
