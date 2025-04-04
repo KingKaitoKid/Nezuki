@@ -10,6 +10,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from nezuki.Logger import *
+from nezuki.StreamingParser import JWPlayer
+import aiohttp
+import asyncio
 
 logger = get_nezuki_logger()
 
@@ -26,26 +29,36 @@ class Browser:
         self.browserName = browserName
         self.headless = headless
         self.driver = None
+        self.setup_browser()
+        self.__m3u8_queue: list = []
+        self.__mp4_queue: list = []
 
         logger.debug(f"Browser scelto è {browserName.capitalize()}", extra={"internal": True})
-        if browserName == "firefox":
+
+        self.options = self.setup_options()
+
+    def setup_browser(self):
+        """ Configura il browser e inizializza il driver """
+        if self.browserName == "firefox":
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
             from selenium.webdriver.firefox.service import Service as FirefoxService
             from webdriver_manager.firefox import GeckoDriverManager
-            self.Options = FirefoxOptions
-            self.Service = FirefoxService
-            self.DriverManager = GeckoDriverManager
-        elif browserName == "chrome":
+            options = FirefoxOptions()
+            options.headless = self.headless
+            service = FirefoxService(GeckoDriverManager().install())
+            self.driver = webdriver.Firefox(service=service, options=options)
+        elif self.browserName == "chrome":
             from selenium.webdriver.chrome.options import Options
             from selenium.webdriver.chrome.service import Service
             from webdriver_manager.chrome import ChromeDriverManager
-            self.Options = Options
-            self.Service = Service
-            self.DriverManager = ChromeDriverManager
+            options = Options()
+            options.headless = self.headless
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=options)
         else:
-            raise ValueError(f"Browser '{browserName}' non supportato.")
-
-        self.options = self.setup_options()
+            raise ValueError(f"Browser '{self.browserName}' non supportato.")
+        
+        logger.debug(f"Browser {self.browserName} avviato con successo.", extra={"internal": True})
 
     def setup_options(self, options: list = ['disable-gpu', 'no-sandbox']) -> 'Options':
         """
@@ -60,7 +73,7 @@ class Browser:
         optionsDefined = self.Options() # LEggiamo le opzioni del browser
         if self.headless:
             logger.debug(f"Aggiungo opzione headless", extra={"internal": True})
-            options.add_argument("--headless")
+            optionsDefined.add_argument("--headless")
         logger.debug(f"Aggiungo le opzioni {options}", extra={"internal": True})
         for option in options:
             optionsDefined.add_argument(f"--{option}")
@@ -185,3 +198,60 @@ class Browser:
             self.driver.save_screenshot(path)
         else:
             logger.warning(f"Non è possibile fare uno screenshot ad un browser mai avviatoq", extra={"internal": True})
+
+    def download_mp4(self, url: str, savePath: str):
+        """
+        Gestore dei download dei file mp4
+        
+        Args:
+            url (string, required): URL del file MP4 da scaricare
+            savePath (string, required): Il percorso assoluto di dove salvare il file MP4
+        
+        """
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.download_file(url, savePath))
+
+    async def download_file(self, url: str, save_path: str):
+        """
+        Funzione asincrona per scaricare un file mp4.
+
+        Args:
+            url (str): L'URL del file MP4 da scaricare
+            save_path (str): Il percorso dove salvare il file
+        """
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    response.raise_for_status()  # Alza un errore se la risposta non è 200
+                    with open(save_path, 'wb') as f:
+                        while True:
+                            chunk = await response.content.read(1024)  # Leggi il file a blocchi di 1024 byte
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                    logger.debug(f"File {save_path} scaricato con successo.", extra={"internal": True})
+        except Exception as e:
+            logger.error(f"Errore nel download del file {url}: {e}", extra={"internal": True})
+
+    def download_mp4_batch(self, urls: list, save_dir: str):
+        """
+        Gestore per eseguire fino a 6 download simultanei di file MP4.
+
+        Args:
+            urls (list): Lista degli URL dei file MP4 da scaricare
+            save_dir (str): Directory dove salvare i file
+        """
+        # Limite di download simultanei (6 alla volta)
+        semaphore = asyncio.Semaphore(6)
+
+        async def download_with_semaphore(url, save_path):
+            async with semaphore:
+                await self.download_file(url, save_path)
+
+        tasks = []
+        for idx, url in enumerate(urls):
+            save_path = os.path.join(save_dir, f"file_{idx+1}.mp4")
+            tasks.append(download_with_semaphore(url, save_path))
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.gather(*tasks))

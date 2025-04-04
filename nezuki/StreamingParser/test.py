@@ -1,3 +1,4 @@
+from nezuki.Logger import *
 custom_config = {
     "file": {
         "filename": "/Users/kaitokid/Documents/vs_workspaces/Nezuki/nezuki/StreamingParser/Logs/log.log",
@@ -8,9 +9,19 @@ custom_config = {
     }
 }
 configure_nezuki_logger(custom_config)
+from nezuki.Browser import *
+from nezuki.StreamingParser import *
 logger = get_nezuki_logger()
 
 browser = Browser("firefox", False)
 
 browser.start()
-browser.get("https://google.com")
+browser.open_url("https://www.anisaturn.com/watch?file=bdKKKHbdpY4g0")
+
+anisaturn = AnimeSaturn(browser)
+
+nameFile = anisaturn.get_title().get("titolo")
+
+file = anisaturn.player.getItemPlayer().get("url")
+
+browser.download_mp4(file, "/Users/kaitokid/Documents/vs_workspaces/Nezuki/nezuki/StreamingParser/test.mp4")
