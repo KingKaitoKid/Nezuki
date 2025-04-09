@@ -1,7 +1,7 @@
 from nezuki.Logger import *
 custom_config = {
     "file": {
-        "filename": "/Users/kaitokid/Documents/vs_workspaces/Nezuki/nezuki/StreamingParser/Logs/log.log",
+        "filename": "/server/git_services/Nezuki/nezuki/StreamingParser/logs.log",
         "maxBytes": 100 * 1024 * 1024,  
         "backupCount": 5,
         "when": "D",

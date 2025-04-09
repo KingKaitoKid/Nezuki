@@ -43,9 +43,9 @@ class Browser:
             from selenium.webdriver.firefox.options import Options as FirefoxOptions
             from selenium.webdriver.firefox.service import Service as FirefoxService
             from webdriver_manager.firefox import GeckoDriverManager
-            options = FirefoxOptions()
+            options = FirefoxOptions("/snap/bin/geckodriver")
             options.headless = self.headless
-            service = FirefoxService(GeckoDriverManager().install())
+            service = FirefoxService()
             self.driver = webdriver.Firefox(service=service, options=options)
         elif self.browserName == "chrome":
             from selenium.webdriver.chrome.options import Options
@@ -53,7 +53,7 @@ class Browser:
             from webdriver_manager.chrome import ChromeDriverManager
             options = Options()
             options.headless = self.headless
-            service = Service(ChromeDriverManager().install())
+            service = Service()
             self.driver = webdriver.Chrome(service=service, options=options)
         else:
             raise ValueError(f"Browser '{self.browserName}' non supportato.")
