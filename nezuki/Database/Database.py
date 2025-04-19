@@ -115,6 +115,7 @@ class Database:
         json_config = JsonManager()
         db_config:str = os.getenv('NEZUKIDB')
         self.configJSONNew = json_config.read_json(db_config)
+        self.configJSONNew['database'] = self.database
         if not self.async_conn:
             try:
                 self.connection = self.start_connection()
@@ -224,15 +225,17 @@ class Database:
 
             try:
                 if self.db_type == "postgresql":
+                    logger.debug(f"Avvio cursor PostgreSQL", extra={"internal": True})
                     cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)  # Restituisce dizionari
                 else:
+                    logger.debug(f"Avvio cursor MySQL", extra={"internal": True})
                     cursor = self.connection.cursor(buffered=True)
 
                 results = []
                 lastrowid = None
 
                 cursor.execute(query, params)
-
+                logger.debug(f"Query Eseguita: {query}\nParametri: {params}", extra={"internal": True})
                 if cursor.description:  # Se la query ha un risultato (es. SELECT)
                     if self.db_type == "postgresql":
                         results = cursor.fetchall()  # ✅ Ora results contiene dati
@@ -252,10 +255,12 @@ class Database:
 
                 rows = cursor.rowcount
                 cursor.close()
+                logger.debug(f"Output query: {results}", extra={"internal": True})
                 result_dict = {"ok": True, "results": results, "rows_affected": rows, "error": None, "lastrowid": lastrowid}
 
             except Exception as e:
                 cursor.close()
+                logger.error(f"Errore durante l'esecuzione della query, errore: {e}", extra={"internal": True})
                 result_dict = {"ok": False, "results": [], "rows_affected": -1, "error": str(e)}
 
             return result_dict
