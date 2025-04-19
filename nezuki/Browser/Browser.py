@@ -1,18 +1,10 @@
-import os
-import time
-import argparse
-import typing
-import urllib.request
-import json
-import re
-import subprocess
+import os, time, argparse, typing, urllib.request, json, re, subprocess, aiohttp, asyncio, m3u8
+from Crypto.Cipher import AES
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from nezuki.Logger import *
 from nezuki.StreamingParser import JWPlayer
-import aiohttp
-import asyncio
 
 logger = get_nezuki_logger()
 
@@ -36,6 +28,21 @@ class Browser:
 
         self.options = self.setup_options()
 
+    def get_current_url(self) -> str:
+        """
+        Restituisce l'URL corrente del browser.
+
+        Returns:
+            str: URL della pagina attualmente visualizzata.
+        """
+        if self.driver:
+            current = self.driver.current_url
+            logger.debug(f"URL corrente del browser: {current}", extra={"internal": True})
+            return current
+        else:
+            logger.warning("Tentato accesso all'URL corrente senza browser avviato", extra={"internal": True})
+            return ""
+
     def setup_browser(self):
         """ Configura il browser e inizializza il driver """
         if self.browserName == "firefox":
@@ -44,7 +51,7 @@ class Browser:
             from webdriver_manager.firefox import GeckoDriverManager
             self.options = Options()
             service = Service(GeckoDriverManager().install())
-            self.driver = webdriver.Firefox(service=service, options=options)
+            self.driver = webdriver.Firefox(service=service, options=self.options)
         elif self.browserName == "chrome":
             from selenium.webdriver.chrome.options import Options
             from selenium.webdriver.chrome.service import Service
@@ -202,17 +209,47 @@ class Browser:
         else:
             logger.warning(f"Non è possibile fare uno screenshot ad un browser mai avviatoq", extra={"internal": True})
 
-    def download_mp4(self, url: str, savePath: str):
+    def download(self, url: str, save_path: str):
         """
-        Gestore dei download dei file mp4
-        
+        Aggiunge l'URL alla coda di download appropriata (MP4 o M3U8).
+
         Args:
-            url (string, required): URL del file MP4 da scaricare
-            savePath (string, required): Il percorso assoluto di dove salvare il file MP4
-        
+            url (str): L'URL del file da scaricare.
+            save_path (str): Il percorso in cui salvare il file scaricato.
         """
+        if url.endswith(".m3u8"):
+            self.__m3u8_queue.append((url, save_path))
+            logger.debug(f"Aggiunto URL M3U8 in coda: {url}", extra={"internal": True})
+        elif url.endswith(".mp4"):
+            self.__mp4_queue.append((url, save_path))
+            logger.debug(f"Aggiunto URL MP4 in coda: {url}", extra={"internal": True})
+        else:
+            logger.warning(f"Estensione non riconosciuta per URL: {url}", extra={"internal": True})
+
+    def process_download_queue(self):
+        """
+        Esegue tutti i download presenti nelle code MP4 e M3U8 in modo asincrono.
+        """
+        async def runner():
+            semaphore = asyncio.Semaphore(6)
+
+            async def sem_wrap(coro):
+                async with semaphore:
+                    return await coro
+
+            tasks = []
+
+            for url, path in self.__mp4_queue:
+                tasks.append(sem_wrap(self.download_file(url, path)))
+
+            for url, path in self.__m3u8_queue:
+                tasks.append(sem_wrap(self.download_m3u8(url, path)))
+
+            await asyncio.gather(*tasks)
+            logger.info("Download completati.", extra={"internal": True})
+
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.download_file(url, savePath))
+        loop.run_until_complete(runner())   
 
     async def download_file(self, url: str, save_path: str):
         """
@@ -236,25 +273,45 @@ class Browser:
         except Exception as e:
             logger.error(f"Errore nel download del file {url}: {e}", extra={"internal": True})
 
-    def download_mp4_batch(self, urls: list, save_dir: str):
+    async def download_m3u8(self, url: str, save_path: str):
         """
-        Gestore per eseguire fino a 6 download simultanei di file MP4.
+        Scarica e unisce un file m3u8 in un file mp4, supportando anche stream criptati con AES-128.
 
         Args:
-            urls (list): Lista degli URL dei file MP4 da scaricare
-            save_dir (str): Directory dove salvare i file
+            url (str): URL del file .m3u8
+            save_path (str): Percorso assoluto dove salvare il file mp4 risultante
         """
-        # Limite di download simultanei (6 alla volta)
-        semaphore = asyncio.Semaphore(6)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    playlist_data = await response.text()
+                    playlist = m3u8.loads(playlist_data)
 
-        async def download_with_semaphore(url, save_path):
-            async with semaphore:
-                await self.download_file(url, save_path)
+                    key = None
+                    iv = None
+                    if playlist.keys and playlist.keys[0]:
+                        key_uri = playlist.keys[0].uri
+                        iv = playlist.keys[0].iv
+                        async with session.get(key_uri) as key_response:
+                            key = await key_response.read()
 
-        tasks = []
-        for idx, url in enumerate(urls):
-            save_path = os.path.join(save_dir, f"file_{idx+1}.mp4")
-            tasks.append(download_with_semaphore(url, save_path))
+                    async def fetch_and_decrypt(segment, idx):
+                        segment_url = segment.absolute_uri
+                        async with session.get(segment_url) as seg_response:
+                            seg_response.raise_for_status()
+                            data = await seg_response.read()
+                            if key:
+                                cipher = AES.new(key, AES.MODE_CBC, bytes.fromhex(iv[2:]) if iv else b'\x00' * 16)
+                                data = cipher.decrypt(data)
+                            return idx, data
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.gather(*tasks))
+                    tasks = [fetch_and_decrypt(seg, i) for i, seg in enumerate(playlist.segments)]
+                    results = await asyncio.gather(*tasks)
+
+                    with open(save_path, 'wb') as f:
+                        for _, data in sorted(results):
+                            f.write(data)
+
+                    logger.debug(f"File {save_path} scaricato e assemblato da m3u8 con successo.", extra={"internal": True})
+        except Exception as e:
+            logger.error(f"Errore nel download m3u8 {url}: {e}", extra={"internal": True})
