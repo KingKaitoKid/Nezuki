@@ -15,7 +15,6 @@ class JWPlayer:
         
         """
         self.browser = browser
-        time.sleep(5)
         self.player = self.__init_player()
         self.__queueDownload: list = []
 
@@ -23,12 +22,14 @@ class JWPlayer:
         """
         Funzione interna per inizializzare il player e poterlo controllare dopo
         """
-        script = "const player = jwplayer();"
-        return self.__execute_js_player(script)
+        time.sleep(3)
+        script = "return jwplayer();"
+        self.consolePlayer = self.__execute_js_player(script)
+        return self.consolePlayer
 
     def play(self):
         """Effettua il play nel player"""
-        script = "player.setMute(true);"
+        script = "return jwplayer().play();"
         to_ret = False
         if self.__execute_js_player(script):
             to_ret = True
@@ -36,7 +37,7 @@ class JWPlayer:
 
     def mute(self):
         """Mette il muto nel player"""
-        script = "player.setMute(true);"
+        script = "return jwplayer().setMute(true);"
         to_ret = False
         if self.__execute_js_player(script):
             to_ret = True
@@ -44,7 +45,7 @@ class JWPlayer:
     
     def unmute(self):
         """Mette il muto nel player"""
-        script = "player.setMute(false);"
+        script = "return jwplayer().setMute(false);"
         to_ret = False
         if self.__execute_js_player(script):
             to_ret = True
@@ -52,7 +53,7 @@ class JWPlayer:
     
     def pause(self):
         """Mette in pausa la riproduzione nel player"""
-        script = "player.pause();"
+        script = "return jwplayer().pause();"
         to_ret = False
         if self.__execute_js_player(script):
             to_ret = True
@@ -60,7 +61,7 @@ class JWPlayer:
 
     def stop(self):
         """Ferma la riproduzione nel player"""
-        script = "player.stop();"
+        script = "return jwplayer().stop();"
         to_ret = False
         if self.__execute_js_player(script):
             to_ret = True
@@ -81,8 +82,7 @@ class JWPlayer:
             None
 
         """
-        script = "player.getPlaylistItem().file;"
-        time.sleep(3)
+        script = "return jwplayer().getPlaylistItem().file;"
         url = self.__execute_js_player(script)
         if url:
             if ".m3u8" in url:
@@ -105,7 +105,7 @@ class JWPlayer:
         logger.debug(f"Eseguo lo script {script}", extra={"internal": True})
         try:
             # Attendi fino a quando il player è pronto
-            to_ret = self.browser.execute_script(script)
+            to_ret = self.browser.driver.execute_script(script)
         except Exception as e:
             to_ret = None
             logger.error(f"Errore durante l'esecuzione del JS: {e}", extra={"internal": True})
