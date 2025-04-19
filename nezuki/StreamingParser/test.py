@@ -13,8 +13,9 @@ from nezuki.Browser import *
 from nezuki.StreamingParser import *
 logger = get_nezuki_logger()
 
-browser = Browser("firefox", False)
+browser = Browser("firefox", True)
 
+browser.setup_options()
 browser.start()
 browser.open_url("https://www.anisaturn.com/watch?file=bdKKKHbdpY4g0")
 

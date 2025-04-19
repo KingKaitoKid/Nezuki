@@ -29,7 +29,6 @@ class Browser:
         self.browserName = browserName
         self.headless = headless
         self.driver = None
-        self.setup_browser()
         self.__m3u8_queue: list = []
         self.__mp4_queue: list = []
 
@@ -40,12 +39,11 @@ class Browser:
     def setup_browser(self):
         """ Configura il browser e inizializza il driver """
         if self.browserName == "firefox":
-            from selenium.webdriver.firefox.options import Options as FirefoxOptions
-            from selenium.webdriver.firefox.service import Service as FirefoxService
+            from selenium.webdriver.firefox.options import Options
+            from selenium.webdriver.firefox.service import Service
             from webdriver_manager.firefox import GeckoDriverManager
-            options = FirefoxOptions("/snap/bin/geckodriver")
-            options.headless = self.headless
-            service = FirefoxService()
+            self.options = Options()
+            service = Service(GeckoDriverManager().install())
             self.driver = webdriver.Firefox(service=service, options=options)
         elif self.browserName == "chrome":
             from selenium.webdriver.chrome.options import Options
@@ -70,27 +68,32 @@ class Browser:
         Returns:
             Options (list, optional): oggetto contenente le opzioni di configurazione per il browser selezionato (default ['disable-gpu', 'no-sandbox'])
         """
-        optionsDefined = self.Options() # LEggiamo le opzioni del browser
+        if self.browserName == "firefox":
+            from selenium.webdriver.firefox.options import Options
+        elif self.browserName == "chrome":
+            from selenium.webdriver.chrome.options import Options
+        else:
+            raise ValueError(f"Browser '{self.browserName}' non supportato.")
+        self.options = Options()
         if self.headless:
             logger.debug(f"Aggiungo opzione headless", extra={"internal": True})
-            optionsDefined.add_argument("--headless")
+            self.options.add_argument("--headless")
         logger.debug(f"Aggiungo le opzioni {options}", extra={"internal": True})
         for option in options:
-            optionsDefined.add_argument(f"--{option}")
-        return optionsDefined
+            self.options.add_argument(f"--{option}")
+        return self.options
 
     def start(self):
         """
             Avvia il browser con le opzioni definite nel costruttore.
         """
-        service = self.Service(self.DriverManager().install())
         logger.debug(f"Avvio {self.browserName.capitalize()} con le opzioni {self.options}", extra={"internal": True})
         if self.browserName == "firefox":
-            from selenium.webdriver import Firefox
-            self.driver = Firefox(service=service, options=self.options)
+            from selenium.webdriver import Firefox as GlobalBrowser
         elif self.browserName == "chrome":
-            from selenium.webdriver import Chrome
-            self.driver = Chrome(service=service, options=self.options)
+            from selenium.webdriver import Chrome as GlobalBrowser
+
+        self.driver = GlobalBrowser(options=self.options)
 
     def quit(self):
         """
