@@ -4,16 +4,17 @@ Tutte le modifiche a questo progetto saranno documentate in questo file.
 
 Il formato seguente è ispirato a [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) e al Semantic Versioning.
 
-## [UNRELEASED]
+
+## [2.0.13] [Unreleased]
 ### Overview
 - **Added:**
-  - Niente da riportarep
+  - **TMDB**: supporto alle API per le sole serie TV
 - **Changed:**
   - Niente da riportare
 - **Deprecated:**
   - Niente da riportare
 - **Fixed:**
-  - Niente di specifico da riportare
+  - **HTTP**: Fix query params GET
 - **Security:**
   - Niente di specifico da riportare
 

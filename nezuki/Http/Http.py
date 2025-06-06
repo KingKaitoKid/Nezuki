@@ -79,8 +79,11 @@ class Http:
             logger.error("Metodo non supportato", extra={"internal": True})
             raise MethodNotSupported(f"Il metodo {method} non è supportato. Scegli tra {list(self.method_mapper.keys())}.")
         try:
-            logger.info(f"Chiamata HTTP\nPayload{payload}\nHeaders: {headers}\nTimeout: {self.timeout}", extra={"internal": True})
-            response = self.method_mapper[method_lower](url, json=payload, headers=headers, timeout=self.timeout)
+            logger.info(f"Chiamata HTTP\nPayload{payload}\nHeaders: {headers}\nTimeout: {self.timeout}\nURL: {url}", extra={"internal": True})
+            if method_lower == "get":
+                response = self.method_mapper[method_lower](url, params=payload, headers=headers, timeout=self.timeout)
+            elif method_lower == "post":
+                response = self.method_mapper[method_lower](url, json=payload, headers=headers, timeout=self.timeout)
             logger.info(f"Risposta HTTP\nPayload{response}", extra={"internal": True})
             return response
         except Exception as e:
@@ -115,6 +118,7 @@ class Http:
         else:
             path = f"{self.basePath}/{path}"
         url = self._build_url(self.protocol, self.host, self.port, path)
+        logger.debug(f"URL: {url}", extra={"internal": True})
         return self._perform_request(method, url, payload, headers)
 
     def do_request(self, method: typing.Literal['GET', 'POST'], protocol: typing.Literal['http', 'https'], host: str, port: int, path: str, payload: dict = None, headers: dict = None) -> requests.Response:
