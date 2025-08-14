@@ -136,6 +136,8 @@ Nezuki/Database/build/
 Nezuki/TMDB/dist/
 Logs/
 
+debug_test.py
+
 # GitHub Actions Runner (Self-Hosted)
 actions-runner/
 runner.lock
