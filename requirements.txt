@@ -39,7 +39,7 @@ mdurl==0.1.2
 more-itertools==10.7.0
 multidict==6.6.4
 mysql-connector-python==9.4.0
-nezuki==2.0.15
+nezuki>=2.0.15
 nh3==0.3.0
 outcome==1.3.0.post0
 packaging==25.0
