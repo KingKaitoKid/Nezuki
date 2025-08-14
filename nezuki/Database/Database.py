@@ -284,7 +284,7 @@ class Database:
     
     def doQuery(self, query: str, params = None) -> dict :
         """
-        Esegue una query sul database.
+        Funzione wrapper per eseguire query con output di tipo tuple(tuple) quindi è un array di risultati
 
         Args:
             query (str): La query da eseguire. Se sono presenti parametri, utilizzare %s per placeholder.
@@ -298,7 +298,7 @@ class Database:
         
     def doQueryNamed(self, query: str, params=None) -> dict:
         """
-        Funzione wrapper per eseguire query 
+        Funzione wrapper per eseguire query con output di tipo tuple di dizionario quindi è un array di JSON
 
         Args:
             query (string, required): La query da eseguire. Se sono presenti parametri, utilizzare %s per placeholder.
