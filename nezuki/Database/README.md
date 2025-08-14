@@ -201,7 +201,7 @@ Se hai suggerimenti o bug da segnalare, apri un **issue** su [GitHub](https://gi
 ---
 
 📌 **Autore:** *Sergio Catacci*  
-📌 **Versione:** *2.2.0*  
+📌 **Versione:** *2.2.1*  
 📌 **Licenza:** *MIT*  
 
 ---
