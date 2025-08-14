@@ -4,7 +4,8 @@ import os
 from re import S
 import typing
 import mysql.connector
-import psycopg2, psycopg2.extras
+import psycopg
+from psycopg.rows import dict_row
 import asyncpg
 from nezuki.Logger import get_nezuki_logger
 
@@ -16,7 +17,7 @@ class Database:
 
     Attributes:
         database (str): Nome del database a cui connettersi.
-        connection: Connessione persistente al DB (istanza di mysql.connector.MySQLConnection o psycopg2 connection).
+        connection: Connessione persistente al DB (istanza di mysql.connector.MySQLConnection o psycopg connection).
         db_type (str): Tipo di database, 'mysql' o 'postgresql'.
         auto_load (bool): Se True, la connessione viene caricata automaticamente.
         errorDBConnection (bool): Flag per indicare errori di connessione.
@@ -86,6 +87,9 @@ class Database:
             "password": password,
             "port": port
         }
+        if self.db_type == "postgresql":
+            self.configJSONNew['dbname'] = self.database
+            self.configJSONNew.pop('database')
         try:
             logger.debug("Avvio la connessione al DB con i parametri", extra={"internal": True})
             self.connection = self.start_connection()
@@ -104,7 +108,7 @@ class Database:
             return mysql.connector.connect(**self.configJSONNew)
         elif self.db_type == "postgresql":
             logger.debug("Avvio connessione PostgreSQL", extra={"internal": True})
-            return psycopg2.connect(**self.configJSONNew)
+            return psycopg.connect(**self.configJSONNew)
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
         
@@ -116,12 +120,17 @@ class Database:
         db_config:str = os.getenv('NEZUKIDB')
         self.configJSONNew = json_config.read_json(db_config)
         self.configJSONNew['database'] = self.database
+        if self.db_type == "postgresql":
+            logger.info("Creo py")
+            self.configJSONNew['dbname'] = self.database
+            self.configJSONNew.pop('database')
         if not self.async_conn:
             try:
                 self.connection = self.start_connection()
             except Exception as e:
                 logger.debug(f"Property connessione: {self.configJSONNew}", extra={"internal": True})
                 logger.error("Property caricate, connessione fallita", extra={"internal": True})
+                raise e
                 self.errorDBConnection = True
             
     def __rollback_safely__(self):
@@ -195,10 +204,10 @@ class Database:
             if self.db_type == "postgresql":
                 if namedOutput:
                     # Dizionari con nomi colonna
-                    cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                    cursor = self.connection.cursor(row_factory=dict_row)  # list[dict]
                 else:
                     # Righe "raw" (ma DictCursor restituisce mapping; se preferisci tuple usa cursor semplice)
-                    cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                    cursor = self.connection.cursor()  # list[tuple]
             else:  # MySQL
                 # In MySQL per namedOutput trasformiamo manualmente dopo il fetch
                 cursor = self.connection.cursor(buffered=True)
