@@ -185,18 +185,14 @@ class Database:
             return {"ok": False, "results": [], "rows_affected": -1, "error": err_msg, "lastrowid": None}
 
         query = self.__sanitize_string__(query)
+        
+        logger.debug(f"Eseguo query parametrica: {query}\nParameters: {params}", extra={"internal": True})
 
         # Determina tipologia query
         first_kw = query.upper().split(None, 1)[0] if query else ""
         is_select = first_kw == "SELECT"
         is_write  = first_kw in {"INSERT", "UPDATE", "DELETE"}
         is_call   = first_kw == "CALL"
-
-        logger.debug(
-            f"Esecuzione query ({'named' if namedOutput else 'raw'}) - tipo: "
-            f"{'SELECT' if is_select else ('DML' if is_write else ('CALL' if is_call else first_kw))}",
-            extra={"internal": True}
-        )
 
         # Scegli il cursor
         cursor = None
