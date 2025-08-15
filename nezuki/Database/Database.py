@@ -108,7 +108,7 @@ class Database:
             return mysql.connector.connect(**self.configJSONNew)
         elif self.db_type == "postgresql":
             logger.debug("Avvio connessione PostgreSQL", extra={"internal": True})
-            return psycopg.connect(**self.configJSONNew)
+            return psycopg.connect(**self.configJSONNew, row_factory=dict_row)
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
         
