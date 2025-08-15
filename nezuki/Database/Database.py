@@ -5,7 +5,7 @@ from re import S
 import typing
 import mysql.connector
 import psycopg
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 import asyncpg
 from nezuki.Logger import get_nezuki_logger
 
@@ -130,7 +130,6 @@ class Database:
             except Exception as e:
                 logger.debug(f"Property connessione: {self.configJSONNew}", extra={"internal": True})
                 logger.error("Property caricate, connessione fallita", extra={"internal": True})
-                raise e
                 self.errorDBConnection = True
             
     def __rollback_safely__(self):
@@ -186,7 +185,7 @@ class Database:
 
         query = self.__sanitize_string__(query)
         
-        logger.debug(f"Eseguo query parametrica: {query}\nParameters: {params}", extra={"internal": True})
+        logger.debug(f"Eseguo query parametrica: {query} - Parameters: {params}", extra={"internal": True})
 
         # Determina tipologia query
         first_kw = query.upper().split(None, 1)[0] if query else ""
@@ -203,7 +202,7 @@ class Database:
                     cursor = self.connection.cursor(row_factory=dict_row)  # list[dict]
                 else:
                     # Righe "raw" (ma DictCursor restituisce mapping; se preferisci tuple usa cursor semplice)
-                    cursor = self.connection.cursor()  # list[tuple]
+                    cursor = self.connection.cursor(row_factory=tuple_row)  # list[tuple]
             else:  # MySQL
                 # In MySQL per namedOutput trasformiamo manualmente dopo il fetch
                 cursor = self.connection.cursor(buffered=True)
