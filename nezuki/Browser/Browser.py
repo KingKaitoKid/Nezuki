@@ -1,7 +1,7 @@
 import os, time, argparse, typing, urllib.request, json, re, subprocess, aiohttp, asyncio, m3u8
 from Crypto.Cipher import AES
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from selenium import webdriver
+from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from nezuki.Logger import *
 from nezuki.StreamingParser import JWPlayer
@@ -27,6 +27,20 @@ class Browser:
         logger.debug(f"Browser scelto è {browserName.capitalize()}", extra={"internal": True})
 
         self.options = self.setup_options()
+
+    def get_host(self)->str:
+        """Ottiene il nome dell'host a partire dall'attuale URL aperto nel browser
+
+            Returns:
+                dominio (string): Il nome del dominio senza HTTPS
+        """
+        url = self.get_current_url()
+        if url != "":
+            regex = r'(https|http)?(:\/\/)?([\w.\-]+)'
+            host_name = re.match(regex, url).group(3)
+            return host_name
+        else:
+            return ""
 
     def get_current_url(self) -> str:
         """
@@ -96,9 +110,9 @@ class Browser:
         """
         logger.debug(f"Avvio {self.browserName.capitalize()} con le opzioni {self.options}", extra={"internal": True})
         if self.browserName == "firefox":
-            from selenium.webdriver import Firefox as GlobalBrowser
+            from seleniumwire.webdriver import Firefox as GlobalBrowser
         elif self.browserName == "chrome":
-            from selenium.webdriver import Chrome as GlobalBrowser
+            from seleniumwire.webdriver import Chrome as GlobalBrowser
 
         self.driver = GlobalBrowser(options=self.options)
 

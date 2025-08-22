@@ -1,3 +1,4 @@
+import time
 from nezuki.Logger import *
 
 custom_config = {
@@ -15,24 +16,42 @@ logger = get_nezuki_logger()
 from nezuki.Browser import *
 from nezuki.StreamingParser import *
 
+# browser = Browser("firefox", True)
+# browser.setup_options()
+# browser.start()
+# browser.open_url("https://www.anisaturn.com/watch?file=pBC_1hqFyAm65")
+
+# anisaturn = AnimeSaturn(browser)
+
+# # Recupera titolo e URL
+# nameFile = anisaturn.get_title().get("titolo")
+# file = anisaturn.player.getItemPlayer().get("url")
+
+# # Invia alla coda di download del browser
+# save_path = f"/Users/kaitokid/Documents/vs_workspaces/Nezuki/nezuki/StreamingParser/{nameFile}.mp4"
+# browser.download(file, save_path)
+
+# # Esegue i download in batch
+# browser.process_download_queue()
+
+# # Prossimo episodio (da usare in ciclo se vuoi gestire tutta la serie)
+# next_ep = anisaturn.get_next_episode()
+# logger.info(f"Prossimo episodio: {next_ep}")
+
 browser = Browser("firefox", True)
 browser.setup_options()
 browser.start()
-browser.open_url("https://www.anisaturn.com/watch?file=pBC_1hqFyAm65")
+browser.open_url("https://streamingcommunity.airforce/titles/7953-italia-shore/stagione-1")
 
-anisaturn = AnimeSaturn(browser)
+sc = StreamingCommunity(browser)
 
-# Recupera titolo e URL
-nameFile = anisaturn.get_title().get("titolo")
-file = anisaturn.player.getItemPlayer().get("url")
+sc_info: dict = sc.get_serie_info().get("props")
+serie_info: dict = sc_info.get("title")
+season_info: dict = sc_info.get("loadedSeason")
+title_id = serie_info.get("id")
 
-# Invia alla coda di download del browser
-save_path = f"/Users/kaitokid/Documents/vs_workspaces/Nezuki/nezuki/StreamingParser/{nameFile}.mp4"
-browser.download(file, save_path)
-
-# Esegue i download in batch
-browser.process_download_queue()
-
-# Prossimo episodio (da usare in ciclo se vuoi gestire tutta la serie)
-next_ep = anisaturn.get_next_episode()
-logger.info(f"Prossimo episodio: {next_ep}")
+for episode in season_info.get("episodes"):
+    episode_id = episode.get("id")
+    m3u8_episode = sc.get_url_file(title_id, episode_id)
+    sc.download_file(m3u8_episode, "/Users/kaitokid/Documents/vs_workspaces/Nezuki/nezuki/StreamingParser/test")
+    time.sleep(9000)
