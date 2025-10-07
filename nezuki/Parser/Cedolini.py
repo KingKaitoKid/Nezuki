@@ -1,6 +1,10 @@
-import sys, pdfplumber
+import pdfplumber, typing, json, base64, io
 from datetime import datetime
 from pydantic import BaseModel
+from nezuki.JsonManager import JsonManager
+from nezuki.Logger import get_nezuki_logger
+
+logger = get_nezuki_logger()
 
 class Anagrafica(BaseModel):
     ragione_sociale: str
@@ -48,6 +52,24 @@ class BustaPaga(BaseModel):
     tfr: TFR
     ferie: Ferie
     permessi: Permessi
+
+class BustaPagaAppleNumbers(BaseModel):
+    meseCedolino: str
+    totaleLordo: float
+    totaleTFR: float
+    ferieResidue: float
+    azienda: str
+    dataAssunzione: str
+    totaleNetto: float
+    permessoResiduo: float
+    ferieGodute: float
+    indirizzoSede: str
+    permessoMaturato: float
+    provinciaSede: str
+    permessoGoduto: float
+    livelloDipendente: str
+    ferieMaturate: float
+    scattoAnzianita: str
 
 class Cedolini:
     def __init__(self):
@@ -119,11 +141,35 @@ class Cedolini:
                 return 0.0
             return None
 
+    def __format_numbers__(self, cedolino_parsed: dict) -> BustaPagaAppleNumbers:
+        """
+            Formatta i campi data in modo che siano compatibili con le scorciatoie di Apple.
+            In particolare, converte le date nel formato ISO 8601 (YYYY-MM-DD).
+        """
+        payload = JsonManager(cedolino_parsed)
+        json_response = {
+            "meseCedolino": payload.retrieveKey("$.cedolino.mese") + " " + payload.retrieveKey("$.cedolino.anno"),
+            "totaleLordo": payload.retrieveKey("$.busta.lordo"),
+            "totaleTFR": payload.retrieveKey("$.tfr.totale"),
+            "ferieResidue": payload.retrieveKey("$.ferie.residue"),
+            "azienda": payload.retrieveKey("$.azienda.nome"),
+            "dataAssunzione": payload.retrieveKey("$.cedolino.data_assunzione"),
+            "totaleNetto": payload.retrieveKey("$.busta.netto"),
+            "permessoResiduo": payload.retrieveKey("$.permessi.residui"),
+            "ferieGodute": payload.retrieveKey("$.ferie.godute"),
+            "indirizzoSede": payload.retrieveKey("$.azienda.indirizzo"),
+            "permessoMaturato": payload.retrieveKey("$.permessi.maturati"),
+            "provinciaSede": payload.retrieveKey("$.azienda.provincia"),
+            "permessoGoduto": payload.retrieveKey("$.permessi.goduti"),
+            "livelloDipendente": payload.retrieveKey("$.anagrafica.livello"),
+            "ferieMaturate": payload.retrieveKey("$.ferie.maturate"),
+            "scattoAnzianita": payload.retrieveKey("$.cedolino.scatto_anzianita")
+        }
+        return json_response
 
-    def analizza_cedolino(self, pdf_path: str, page_number: int = 0)-> BustaPaga:
+    def analizza_cedolino(self, pdf: str, page_number: int = 0, format: typing.Literal["dict", "json"] = "dict", output: typing.Literal["dict", "numbers"] = "dict")-> dict|str:
         """
             Estrae i dati principali dal cedolino PDF specificato.
-
             Estrae e restituisce un dizionario strutturato con i seguenti campi:
             - anagrafica: dati personali del dipendente
             - azienda: dati dell'azienda
@@ -132,10 +178,44 @@ class Cedolini:
             - tfr: totale e valore mensile del TFR
             - ferie: ferie godute, residue e maturate
             - permessi: permessi goduti, residui e maturati
-
             Il risultato è un dizionario pronto per essere convertito in un modello Pydantic.
-        """
-        with pdfplumber.open(pdf_path) as pdf:
+
+            Args:
+                pdf (str|bytes, obbligatorio):
+                    Percorso del file PDF, stringa base64 o bytes
+                page_number (int, facoltativo):
+                    Numero della pagina da analizzare. Defaults to 0.
+                format (Literal["dict", "json"], facoltativo):
+                    Indica il formato di dato da restituire. Defaults to "dict".
+                output (["dict", "numbers"], facoltativo):
+                    Specifica il formato di output desiderato. Defaults to "dict".
+
+            Returns:
+                dict|str: Dati estratti dal cedolino nel formato specificato.
+
+            Raises:
+                ValueError: Se il formato della sorgente non è supportato.
+            """
+
+        pdf_file = None
+        if isinstance(pdf, str):
+            if pdf.strip().endswith(".pdf"):
+                logger.debug(f"Caricamento PDF da file: {pdf}", extra={"internal": True})
+                pdf_file = pdf
+            else:
+                # trattiamo come base64
+                logger.debug("Caricamento PDF da stringa base64", extra={"internal": True})
+                pdf_bytes = base64.b64decode(pdf)
+                pdf_file = io.BytesIO(pdf_bytes)
+        elif isinstance(pdf, (bytes, bytearray)):
+            logger.debug("Caricamento PDF da bytes", extra={"internal": True})
+            pdf_file = io.BytesIO(pdf)
+        else:
+            logger.error("Formato sorgente non supportato", extra={"internal": True})
+            raise ValueError("Formato sorgente non supportato")
+
+
+        with pdfplumber.open(pdf_file) as pdf:
             page = pdf.pages[page_number]
             
 
@@ -180,5 +260,17 @@ class Cedolini:
                     "maturati": self.__estrai_word__(page, x0=275.00, x1=298.00, top=636.00, bottom=645.00, tol=10, to_format=float),
                 },
             }
+        
+        if output == "dict":
+            cedolino_format = json_busta
+        elif output == "numbers":
+            cedolino_format = self.__format_numbers__(json_busta)
+        else:
+            cedolino_format = json_busta
 
-        return json_busta
+        if format == "dict":
+            logger.debug(f"Cedolino dict: {cedolino_format}", extra={"internal": True})
+            return cedolino_format
+        elif format == "json":
+            logger.debug(f"Cedolino json: {cedolino_format}", extra={"internal": True})
+            return json.dumps(cedolino_format)
