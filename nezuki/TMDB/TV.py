@@ -1,9 +1,14 @@
+from . import __version__
+from versioning import deprecated
 from .TMDB import TMDB
 
 class TV(TMDB):
     """
         Class to get informations about a specific serie
     """
+    
+    __version__ = __version__
+
     def details(self, **kwargs) -> dict:
         """
             Get the details of a TV show

@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 from Database import Database
 from File import File
 from HomeConnection import HomeConnection, HomeWiFi
@@ -12,6 +14,8 @@ from commonLogId import *
 @versione("1.1.0")
 class CustomTestResult(unittest.TextTestResult):
     """ Custom test result to track and categorize test results. """
+
+    __version__ = __version__
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream, descriptions, verbosity)

@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 import json, re, os, shutil, CloudFlare, time, typing, socket, subprocess
 from sys import stdout
 from time import sleep
@@ -7,6 +9,9 @@ from Common import *
 @versione("2.0.0")
 class TreeManager:
     """ Classe adibita alla gestione di file e cartelle con le classiche operazioni di creazione, aggiornamento, cancellazione, spostamento, rinomia ed altro """
+    
+    __version__ = __version__
+    
     def __init__(self, base_path: str):
         """
             Inizializzatore dell'oggetto, richiede il path assoluto.

@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 from nezuki.EncoderDecoder import EncoderDecoder
 from cryptography.fernet import Fernet
 import base64
@@ -8,7 +10,9 @@ import base64
 
 class CipherHandler(EncoderDecoder):
     """Classe per crittografare e decrittografare dati con chiave segreta (Fernet - AES)."""
-
+    
+    __version__ = __version__
+    
     def __init__(self, key: bytes = None):
         """
         Inizializza il gestore di crittografia con una chiave segreta.

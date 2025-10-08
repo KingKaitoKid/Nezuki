@@ -1,5 +1,6 @@
-import typing
-import requests
+from . import __version__
+from versioning import deprecated
+import typing,  requests
 from nezuki.Logger import get_nezuki_logger
 
 logger = get_nezuki_logger()
@@ -13,6 +14,9 @@ class InsufficientInfo(Exception):
     pass
 
 class Http:
+
+    __version__ = __version__
+
     """Classe che permette di effettuare chiamate HTTP."""
     def __init__(self, protocol: typing.Literal['http', 'https'] = "https", host: str = "", port: int = 0, basePath: str = "", timeout: int = 30):
         """

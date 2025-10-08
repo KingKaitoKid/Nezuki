@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 import pdfplumber, typing, json, base64, io
 from datetime import datetime
 from pydantic import BaseModel
@@ -72,6 +74,10 @@ class BustaPagaAppleNumbers(BaseModel):
     scattoAnzianita: str
 
 class Cedolini:
+    """Classe per l'analisi dei cedolini PDF."""
+    
+    __version__ = __version__
+
     def __init__(self):
         pass
 

@@ -3,14 +3,13 @@ from versioning import deprecated
 from nezuki.JsonManager import JsonManager
 import yaml
 
-@deprecated("2.0.0", "Usare il modulo nazuki.Parser e importare Yaml, la funzione read_yaml è rimasta invariata")
 class YamlManager:
     '''
         Questa classe serve per gestire un yaml file.
     '''
 
     __version__ = __version__
-    
+
     def __init__(self, yaml_file:str) -> None:
         self.data = self.read_yaml(yaml_file)
         self.dataManager = JsonManager(self.data)

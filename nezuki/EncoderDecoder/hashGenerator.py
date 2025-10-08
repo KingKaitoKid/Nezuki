@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 from nezuki.EncoderDecoder import EncoderDecoder
 import hashlib
 
@@ -7,6 +9,8 @@ import hashlib
 
 class HashGenerator(EncoderDecoder):
     """Genera hash utilizzando diversi algoritmi (SHA256, SHA512, MD5, ecc.)."""
+    
+    __version__ = __version__
 
     def encode(self, data: str, algorithm: str = "sha256") -> str:
         """

@@ -1,8 +1,12 @@
+from . import __version__
+from versioning import deprecated
 from nezuki.Logger import get_nezuki_logger
 
 class EncoderDecoder:
     """Classe base per gestire encoding, decoding, hashing e crittografia."""
-
+    
+    __version__ = __version__
+    
     def __init__(self):
         self.logger = get_nezuki_logger()
 

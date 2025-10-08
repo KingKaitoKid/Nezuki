@@ -1,7 +1,8 @@
+from . import __version__
+from versioning import deprecated
 from nezuki.EncoderDecoder import EncoderDecoder
-import qrcode
+import qrcode, base64
 from io import BytesIO
-import base64
 
 
 # ----------------------------------------
@@ -10,6 +11,8 @@ import base64
 
 class QRCodeHandler(EncoderDecoder):
     """Gestisce la creazione e la lettura di QR Code."""
+    
+    __version__ = __version__
 
     def __init__(self):
         """Inizializza il gestore di QR Code con il logger ereditato da EncoderDecoder."""

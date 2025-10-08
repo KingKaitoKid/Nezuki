@@ -1,6 +1,8 @@
+from . import __version__
+from versioning import deprecated
 import smtplib
 import os
-import argparse
+import argparsae
 import json
 from email.message import EmailMessage
 from nezuki.Logger import get_nezuki_logger
@@ -17,6 +19,8 @@ class Mail:
 
     Se nessun parametro è specificato, la variabile d'ambiente è obbligatoria.
     """
+
+    __version__ = __version__
 
     def __init__(self, smtp_config: dict = None):
         """

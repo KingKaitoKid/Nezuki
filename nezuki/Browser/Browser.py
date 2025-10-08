@@ -1,23 +1,20 @@
-import os
-import time
-import argparse
-import typing
-import urllib.request
-import json
-import re
-import subprocess
+from . import __version__
+from versioning import deprecated
+import os, time, argparse, typing, urllib.request, json, re, subprocess, aiohttp, asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from nezuki.Logger import *
 from nezuki.StreamingParser import JWPlayer
-import aiohttp
-import asyncio
+
 
 logger = get_nezuki_logger()
 
 class Browser:
     """ Classe che permette di avviare e controllare un browser """
+    
+    __version__ = __version__
+    
     def __init__(self, browserName: typing.Literal['firefox', 'chrome'], headless: bool = True):
         """
             Classe che istanzia l'oggetto Browser

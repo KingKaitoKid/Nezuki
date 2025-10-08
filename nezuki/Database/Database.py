@@ -1,12 +1,8 @@
-import datetime
-import json
-import os
+from . import __version__
+from versioning import deprecated
+import datetime, json, os, typing, mysql.connector, psycopg, asyncpg
 from re import S
-import typing
-import mysql.connector
-import psycopg
 from psycopg.rows import dict_row, tuple_row
-import asyncpg
 from nezuki.Logger import get_nezuki_logger
 
 logger = get_nezuki_logger()  # Usa il logger corretto
@@ -22,7 +18,9 @@ class Database:
         auto_load (bool): Se True, la connessione viene caricata automaticamente.
         errorDBConnection (bool): Flag per indicare errori di connessione.
     """
-
+    
+    __version__ = __version__
+    
     database: str
     """ Nome del Database al quale ci si vuole collegare"""
 
