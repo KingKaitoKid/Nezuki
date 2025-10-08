@@ -26,9 +26,9 @@ def deprecated(deprecated_version: str, new_alternative: str):
             )
             warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
             if current > deprecated:
-                logger.error(f"DEPRECATION ERROR: {msg}", extra={"internal": True})
+                logger.error(f"DEPRECATION ERROR: {msg}\t\tAggiornare modulo Nezuki se l'errore deriva da un modulo non custom", extra={"internal": True})
             else:
-                logger.warning(f"DEPRECATION WARNING: {msg}", extra={"internal": True})
+                logger.warning(f"DEPRECATION WARNING: {msg}\t\tAggiornare modulo Nezuki se l'errore deriva da un modulo non custom", extra={"internal": True})
             return func(*args, **kwargs)
         return wrapper
     return decorator
