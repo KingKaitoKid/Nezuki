@@ -148,5 +148,5 @@ diag/
 logs/
 
 # Files di test
-cedolino_*.pdf
-cedolino*.csv
+*.csv
+*.pdf
