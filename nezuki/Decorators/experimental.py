@@ -20,7 +20,7 @@ def experimental(added_in: str = None, notes: str = None, expected_stable_in: st
                 + (f"{notes or ''}")
             )
             warnings.warn(msg, category=UserWarning, stacklevel=2)
-            logger.info(f"EXPERIMENTAL NOTICE: {msg}", extra={"internal": True})
+            logger.warning(f"EXPERIMENTAL NOTICE: {msg}", extra={"internal": True})
             return func(*args, **kwargs)
 
         _add_note(func, f"[EXPERIMENTAL] {notes or ''}")

@@ -1,12 +1,8 @@
-from . import __version__
-from versioning import deprecated
+from . import __version__, logger
 import pdfplumber, typing, json, base64, io
 from datetime import datetime
 from pydantic import BaseModel
 from nezuki.JsonManager import JsonManager
-from nezuki.Logger import get_nezuki_logger
-
-logger = get_nezuki_logger()
 
 class Anagrafica(BaseModel):
     ragione_sociale: str

@@ -11,7 +11,12 @@ class YamlManager:
 
     __version__ = __version__
     
-    def __init__(self, yaml_file:str) -> None:
+    def __init__(self, yaml_file:str=None) -> None:
+        """
+            Inizializza il gestore YAML.
+            Args:
+                yaml_file (str, optional): Path del file YAML da caricare. Defaults to None [legacy].
+        """
         self.data = self.read_yaml(yaml_file)
         self.dataManager = JsonManager(self.data)
     
