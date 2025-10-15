@@ -1,4 +1,4 @@
-from . import __version__
+from . import __version__, logger
 from versioning import deprecated
 from nezuki.EncoderDecoder import EncoderDecoder
 from cryptography.fernet import Fernet

@@ -1,13 +1,10 @@
-from . import __version__
+from . import __version__, logger
 from versioning import deprecated
 import smtplib
 import os
 import argparsae
 import json
 from email.message import EmailMessage
-from nezuki.Logger import get_nezuki_logger
-
-logger = get_nezuki_logger()
 
 class Mail:
     """
@@ -30,7 +27,7 @@ class Mail:
             smtp_config (dict, opzionale): Dizionario con i parametri SMTP (host, port, user, pass, root_email).
                                            Se non fornito, tenta di leggere la variabile d'ambiente `NEZUKIMAIL`.
         """
-        self.logger = get_nezuki_logger()
+        self.logger = logger
 
         if smtp_config is None:
             json_path = os.getenv("NEZUKIMAIL")

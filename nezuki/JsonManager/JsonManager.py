@@ -1,11 +1,8 @@
-from . import __version__
-from versioning import deprecated
+from . import __version__, logger
 import json, os, re
 from jsonpath_ng import parse
-from nezuki.Logger import get_nezuki_logger
 
 # Inizializza il logger di Nezuki con il flag internal=True
-logger = get_nezuki_logger()
 
 class JsonManager:
     """
