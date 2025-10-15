@@ -1,5 +1,4 @@
 from . import __version__, logger
-from versioning import deprecated
 import datetime, json, os, typing, mysql.connector, psycopg, asyncpg
 from re import S
 from psycopg.rows import dict_row, tuple_row
