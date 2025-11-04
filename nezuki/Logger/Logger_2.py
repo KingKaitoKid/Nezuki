@@ -1,7 +1,7 @@
-# nezuki_logger_v2.py
-import os, sys, json, logging, threading, contextvars, re, uuid, time
+import os, sys, json, logging, contextvars, re, uuid, time
 from datetime import datetime, timezone
 from logging.handlers import TimedRotatingFileHandler
+
 
 # =========================
 # Singleton globale
@@ -382,6 +382,7 @@ def configure_nezuki_logger(config: dict | None = None):
     """Forza configurazione custom del logger."""
     global _nezuki_logger
     _nezuki_logger = _build_logger(config)
+
 
 def get_nezuki_logger() -> logging.Logger:
     """Restituisce logger pronto: se non configurato, fallback automatico."""

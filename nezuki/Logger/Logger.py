@@ -106,7 +106,6 @@ def configure_nezuki_logger(config: dict | None = None):
     global _nezuki_logger
     _nezuki_logger = _build_logger(config)
 
-
 def get_nezuki_logger() -> logging.Logger:
     """Restituisce logger pronto: se non configurato, fallback automatico."""
     global _nezuki_logger

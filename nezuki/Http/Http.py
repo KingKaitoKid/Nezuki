@@ -1,6 +1,5 @@
 from . import __version__, logger
 import typing,  requests
-from nezuki.Logger import get_nezuki_logger
 
 class MethodNotSupported(Exception):
     """Errore sollevato quando viene usato un metodo non implementato."""

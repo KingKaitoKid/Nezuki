@@ -1,5 +1,4 @@
-from . import __version__
-from versioning import deprecated
+from . import __version__, logger
 from nezuki.EncoderDecoder import EncoderDecoder
 import hashlib
 
@@ -40,7 +39,7 @@ class HashGenerator(EncoderDecoder):
         hash_object.update(data.encode("utf-8"))
         hash_value = hash_object.hexdigest()
 
-        self.logger.info(f"Hash {algorithm} generato con successo.", extra={'internal': True})
+        logger.info(f"Hash {algorithm} generato con successo.", extra={'internal': True})
         return hash_value
 
     def decode(self, encoded_data: str) -> str:

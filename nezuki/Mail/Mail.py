@@ -1,5 +1,4 @@
 from . import __version__, logger
-from versioning import deprecated
 import smtplib
 import os
 import argparsae
@@ -27,14 +26,12 @@ class Mail:
             smtp_config (dict, opzionale): Dizionario con i parametri SMTP (host, port, user, pass, root_email).
                                            Se non fornito, tenta di leggere la variabile d'ambiente `NEZUKIMAIL`.
         """
-        self.logger = logger
-
         if smtp_config is None:
             json_path = os.getenv("NEZUKIMAIL")
             if json_path and os.path.isfile(json_path):
                 with open(json_path, "r") as file:
                     smtp_config = json.load(file)
-                self.logger.info(f"Lettura configurazione SMTP da variabile d'ambiente NEZUKIMAIL ({json_path})", extra={"internal": True})
+                logger.info(f"Lettura configurazione SMTP da variabile d'ambiente NEZUKIMAIL ({json_path})", extra={"internal": True})
             else:
                 raise ValueError("Errore: Né i parametri SMTP né la variabile d'ambiente NEZUKIMAIL sono forniti!")
 
@@ -78,17 +75,17 @@ class Mail:
 
             msg.add_alternative(body, subtype="html")
 
-            self.logger.debug(f"Email pronta all'invio", extra={"internal": True, "details": str(msg)})
+            logger.debug(f"Email pronta all'invio", extra={"internal": True, "details": str(msg)})
 
             with smtplib.SMTP(self.smtp_host, self.smtp_port) as smtp_server:
                 smtp_server.starttls()
                 smtp_server.login(self.user, self.password)
                 smtp_server.send_message(msg)
 
-            self.logger.info(f"Email inviata con successo", extra={"internal": True, "details": str(msg)})
+            logger.info(f"Email inviata con successo", extra={"internal": True, "details": str(msg)})
 
         except smtplib.SMTPException as e:
-            self.logger.error(f"Errore SMTP durante l'invio", extra={"internal": True, "details": str(e)})
+            logger.error(f"Errore SMTP durante l'invio", extra={"internal": True, "details": str(e)})
 
 
 # --- CLI COMMAND ---

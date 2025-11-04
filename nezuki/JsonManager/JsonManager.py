@@ -1,5 +1,5 @@
 from . import __version__, logger
-import json, os, re
+import json, os
 from jsonpath_ng import parse
 
 # Inizializza il logger di Nezuki con il flag internal=True

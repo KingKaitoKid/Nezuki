@@ -1,5 +1,4 @@
-from . import __version__
-from versioning import deprecated
+from . import __version__, logger
 from nezuki.EncoderDecoder import EncoderDecoder
 import qrcode, base64
 from io import BytesIO
@@ -49,7 +48,7 @@ class QRCodeHandler(EncoderDecoder):
         img.save(buffered, format=formato)
 
         qr_code_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-        self.logger.info("QR Code generato con successo.", extra={'internal': True})
+        logger.info("QR Code generato con successo.", extra={'internal': True})
 
         return qr_code_base64
 

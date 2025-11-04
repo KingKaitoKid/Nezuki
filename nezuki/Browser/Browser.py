@@ -1,14 +1,8 @@
-from . import __version__
-from versioning import deprecated
-import os, time, argparse, typing, urllib.request, json, re, subprocess, aiohttp, asyncio
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from . import __version__, logger
+import os, typing, aiohttp, asyncio
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from nezuki.Logger import *
-from nezuki.StreamingParser import JWPlayer
-
-
-logger = get_nezuki_logger()
 
 class Browser:
     """ Classe che permette di avviare e controllare un browser """
