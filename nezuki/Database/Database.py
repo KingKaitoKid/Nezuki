@@ -1,15 +1,6 @@
-import datetime
-import json
-import os
-from re import S
-import typing
-import mysql.connector
-import psycopg
+from . import __version__, logger
+import datetime, os, typing, mysql.connector, psycopg, asyncpg
 from psycopg.rows import dict_row, tuple_row
-import asyncpg
-from nezuki.Logger import get_nezuki_logger
-
-logger = get_nezuki_logger()  # Usa il logger corretto
 
 class Database:
     """
@@ -22,7 +13,9 @@ class Database:
         auto_load (bool): Se True, la connessione viene caricata automaticamente.
         errorDBConnection (bool): Flag per indicare errori di connessione.
     """
-
+    
+    __version__ = __version__
+    
     database: str
     """ Nome del Database al quale ci si vuole collegare"""
 
@@ -58,7 +51,7 @@ class Database:
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
 
-    def connection_params(self, host: str, user: str, password: str, port: int=None) -> dict:
+    def connection_params(self, host: str, user: str, password: str, port: int=None, db_name: str=None) -> dict:
         """
         Configura manualmente i parametri di connessione al database.
 
@@ -81,7 +74,7 @@ class Database:
                 port = 5432
 
         self.configJSONNew: dict = {
-            "database": self.database,
+            "database": db_name if db_name else self.database,
             "host": host,
             "user": user,
             "password": password,
@@ -101,16 +94,32 @@ class Database:
     
     def start_connection(self):
         """
-        Avvia la connessione al Database
+            Avvia la connessione al Database
         """
         if self.db_type == "mysql":
             logger.debug("Avvio connessione MySQL", extra={"internal": True})
+            if hasattr(self, "connection") and self.connection:
+                logger.warning("Rilevata una connessione aperte in precedenza, la chiudo e avvio una nuova connessione")
+                self.connection.close()
             return mysql.connector.connect(**self.configJSONNew)
         elif self.db_type == "postgresql":
             logger.debug("Avvio connessione PostgreSQL", extra={"internal": True})
+            if hasattr(self, "connection") and self.connection:
+                logger.warning("Rilevata una connessione aperte in precedenza, la chiudo e avvio una nuova connessione")
+                self.connection.close()
             return psycopg.connect(**self.configJSONNew, row_factory=dict_row)
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
+    
+    def change_db_name(self, databaseName: str) -> None:
+        """
+        Cambia il database a cui connettersi, riavviando la connessione aperta.
+
+        Args:
+            databaseName (str): Nome del nuovo database.
+        """
+        self.database = databaseName
+        self.start_connection()
         
     def __load_configuration__(self):
         logger.info("Carico connessione al DB da $NEZUKIDB", extra={"internal": True})

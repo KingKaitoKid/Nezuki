@@ -1,8 +1,5 @@
-import typing
-import requests
-from nezuki.Logger import get_nezuki_logger
-
-logger = get_nezuki_logger()
+from . import __version__, logger
+import typing,  requests
 
 class MethodNotSupported(Exception):
     """Errore sollevato quando viene usato un metodo non implementato."""
@@ -13,6 +10,9 @@ class InsufficientInfo(Exception):
     pass
 
 class Http:
+
+    __version__ = __version__
+
     """Classe che permette di effettuare chiamate HTTP."""
     def __init__(self, protocol: typing.Literal['http', 'https'] = "https", host: str = "", port: int = 0, basePath: str = "", timeout: int = 30):
         """
@@ -120,6 +120,56 @@ class Http:
         url = self._build_url(self.protocol, self.host, self.port, path)
         logger.debug(f"URL: {url}", extra={"internal": True})
         return self._perform_request(method, url, payload, headers)
+
+    def get(self, host: str, protocol: typing.Literal['HTTP', 'HTTPS'] = "HTTP", port: int=None, queryParams: typing.Optional[dict]=None):
+        """
+          Esegue una richiesta GET ad un host specificato
+
+        Args:
+            host (str, required): L'host a cui inviare la richiesta, ad esempio google.com, includere anche il path
+            protocol (http|https, optional): Il protocollo da usare, default http
+            port (int, optional): La porta del server; se omessa calcolata automaticamente in base al protocollo
+            queryParams (dict, optional): Eventuali parametri da includere nella query string.
+
+        Returns:
+            requests.Response: La risposta della richiesta.
+        """
+        logger.debug("Eseguo richiesta GET", extra={"internal": True})
+        if port is None:
+            port = 80 if protocol.lower() == "http" else 443
+        
+        if "/" in host:
+            path = host[host.index("/"):]
+            host = host[:host.index("/")]
+        else:
+            path = "/"
+
+        return self.do_request("GET", protocol, host, port, path, queryParams)
+
+    def post(self, host: str, protocol: typing.Literal['HTTP', 'HTTPS'] = "HTTP", port: int=None, payload: typing.Optional[dict]=None):
+        """
+          Esegue una richiesta POST ad un host specificato
+
+        Args:
+            host (str, required): L'host a cui inviare la richiesta, ad esempio google.com, includere anche il path
+            protocol (http|https, optional): Il protocollo da usare, default http
+            port (int, optional): La porta del server; se omessa calcolata automaticamente in base al protocollo
+            queryParams (dict, optional): Eventuali parametri da includere nella query string.
+
+        Returns:
+            requests.Response: La risposta della richiesta.
+        """
+        logger.debug("Eseguo richiesta POST", extra={"internal": True})
+        if port is None:
+            port = 80 if protocol.lower() == "http" else 443
+        
+        if "/" in host:
+            path = host[host.index("/"):]
+            host = host[:host.index("/")]
+        else:
+            path = "/"
+
+        return self.do_request("POST", protocol, host, port, path, payload)
 
     def do_request(self, method: typing.Literal['GET', 'POST'], protocol: typing.Literal['http', 'https'], host: str, port: int, path: str, payload: dict = None, headers: dict = None) -> requests.Response:
         """

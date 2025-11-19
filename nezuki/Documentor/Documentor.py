@@ -1,5 +1,4 @@
-import ast
-import os
+import ast, os
 from typing import List, Dict, Any
 
 class Documentor:

@@ -146,3 +146,7 @@ work/
 _service
 diag/
 logs/
+
+# Files di test
+*.csv
+*.pdf

@@ -1,9 +1,14 @@
+from . import __version__
+from versioning import deprecated
 from .TMDB import TMDB
 
 class Configurations(TMDB):
     """
         Class to perform a search on TMDB Database and retrieve some general informations
     """
+
+    __version__ = __version__
+
     def countries(self, **kwargs)->dict:
         """
             Get the list of countries (ISO 3166-1 tags) used throughout TMDB

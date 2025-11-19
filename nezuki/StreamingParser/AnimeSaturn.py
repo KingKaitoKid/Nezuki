@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 from nezuki.Logger import *
 logger = get_nezuki_logger()
 from nezuki.Browser import Browser
@@ -6,6 +8,9 @@ from selenium.webdriver.common.by import By
 import re
 
 class AnimeSaturn:
+    
+    __version__ = __version__
+
     def __init__(self, browser: Browser):
         """
         Inizializza l'oggetto Anime Saturn insieme al player

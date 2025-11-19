@@ -1,9 +1,14 @@
+from . import __version__
+from versioning import deprecated
 from .TMDB import TMDB
 
 class Networks(TMDB):
     """
         Class to perform a search on TMDB Database and retrieve some general informations
     """
+    
+    __version__ = __version__
+
     def details(self, **kwargs)->dict:
         """
             Get network information
