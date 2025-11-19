@@ -5,7 +5,7 @@ from pathlib import Path
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-__version__ = (this_directory / "version.txt").read_text()
+__version__ = (this_directory / "nezuki/version.txt").read_text()
 
 requirements = (this_directory / "requirements.txt").read_text().splitlines()
 
