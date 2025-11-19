@@ -1,3 +1,4 @@
+from . import __version__, logger
 from nezuki.EncoderDecoder import EncoderDecoder
 from cryptography.fernet import Fernet
 import base64
@@ -8,7 +9,9 @@ import base64
 
 class CipherHandler(EncoderDecoder):
     """Classe per crittografare e decrittografare dati con chiave segreta (Fernet - AES)."""
-
+    
+    __version__ = __version__
+    
     def __init__(self, key: bytes = None):
         """
         Inizializza il gestore di crittografia con una chiave segreta.
@@ -36,7 +39,7 @@ class CipherHandler(EncoderDecoder):
         encrypted_data = self.cipher.encrypt(data.encode())
         encrypted_base64 = base64.b64encode(encrypted_data).decode()
 
-        self.logger.info("Dato crittografato con successo.", extra={'internal': True})
+        logger.info("Dato crittografato con successo.", extra={'internal': True})
         return encrypted_base64
 
     def decode(self, encoded_data: str) -> str:
@@ -52,10 +55,10 @@ class CipherHandler(EncoderDecoder):
         try:
             decoded_bytes = base64.b64decode(encoded_data)
             decrypted_data = self.cipher.decrypt(decoded_bytes).decode()
-            self.logger.info("Dato decrittografato con successo.", extra={'internal': True})
+            logger.info("Dato decrittografato con successo.", extra={'internal': True})
             return decrypted_data
         except Exception:
-            self.logger.error("Errore durante la decrittografia.", extra={'internal': True})
+            logger.error("Errore durante la decrittografia.", extra={'internal': True})
             raise ValueError("Errore: Impossibile decifrare il dato.")
 
     def get_key(self) -> str:

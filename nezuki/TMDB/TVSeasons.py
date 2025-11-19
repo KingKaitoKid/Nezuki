@@ -1,9 +1,14 @@
+from . import __version__
+from versioning import deprecated
 from .TMDB import TMDB
 
 class TVSeasons(TMDB):
     """
         Classe per interagire con le informazioni relative alle stagioni di una serie TV tramite le API di TMDb.
     """
+
+    __version__ = __version__
+
     def details(self, **kwargs) -> dict:
         return self._handle_tvseasons_call("GET", **kwargs)
 

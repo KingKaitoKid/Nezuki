@@ -1,14 +1,26 @@
-from JsonManager import JsonManager
+from . import __version__
+from versioning import *
+from nezuki.JsonManager import JsonManager
 import yaml
 
+@deprecated("2.1.0", "Modulo dismesso per intero, usare nezuki.Parser", tipo="Modulo")
 class YamlManager:
     '''
         Questa classe serve per gestire un yaml file.
     '''
-    def __init__(self, yaml_file:str) -> None:
+
+    __version__ = __version__
+    
+    def __init__(self, yaml_file:str=None) -> None:
+        """
+            Inizializza il gestore YAML.
+            Args:
+                yaml_file (str, optional): Path del file YAML da caricare. Defaults to None [legacy].
+        """
         self.data = self.read_yaml(yaml_file)
         self.dataManager = JsonManager(self.data)
-        
+    
+    @legacy("2.0.0", "Funzione dismessa, usare la nuova funzione parse_yaml di nezuki.Parser modulo Yaml", "2.1.0")
     def read_yaml(self, path: str) -> dict:
         """
             Legge il file da path assoluto e torna il contenuto del file in un JSON decodificato.
@@ -25,8 +37,3 @@ class YamlManager:
         except Exception as e:
             content_json = None
         return content_json
-    
-    
-# x = YamlManager("/Users/andreacolangelo/Lavoro/github/pokedex/Python/pokedxTestBot/config/dev.yaml")
-# j = JsonManager(x.data)
-# print(j.retrieveKey("admins"))

@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 import time
 from nezuki.Logger import *
 logger = get_nezuki_logger()
@@ -7,6 +9,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 class JWPlayer:
+    
+    __version__ = __version__
+
     def __init__(self, browser: Browser):
         """ Inizializza l'oggetto JWPlayer e crea "player" per controllarlo ed ottenere altre informazioni
         

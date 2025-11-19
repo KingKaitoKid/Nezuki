@@ -1,9 +1,14 @@
+from . import __version__
+from versioning import deprecated
 from .TMDB import TMDB
 
 class Search(TMDB):
     """
         Class to perform a search on TMDB Database and retrieve some general informations
     """
+    
+    __version__ = __version__
+
     def collection(self, **kwargs)->dict:
         """
             Search for collections by their original, translated and alternative names.

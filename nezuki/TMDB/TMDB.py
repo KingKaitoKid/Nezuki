@@ -1,3 +1,5 @@
+from . import __version__
+from versioning import deprecated
 from nezuki.Logger import get_nezuki_logger
 import inspect
 from nezuki.Http import Http
@@ -6,6 +8,9 @@ from nezuki.TMDB import API_KEY, REQUESTS_TIMEOUT, API_VERSION, API_PATHS
 logger = get_nezuki_logger()
 
 class TMDB:
+    
+    __version__ = __version__
+
     def __init__(self):
         """ Initialize the object """
         self.baseUri = 'api.themoviedb.org'

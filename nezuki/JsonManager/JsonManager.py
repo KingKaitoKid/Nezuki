@@ -1,16 +1,15 @@
-import json
-import os
-import re
+from . import __version__, logger
+import json, os
 from jsonpath_ng import parse
-from nezuki.Logger import get_nezuki_logger
 
 # Inizializza il logger di Nezuki con il flag internal=True
-logger = get_nezuki_logger()
 
 class JsonManager:
     """
     Questa classe permette di gestire file JSON, supportando lettura, scrittura e modifica dei dati.
     """
+
+    __version__ = __version__
 
     def __init__(self, json_data: dict | str | list = {}):
         """
@@ -131,24 +130,24 @@ class JsonManager:
             return False
 
 # --- ESEMPIO DI UTILIZZO ---
-if __name__ == "__main__":
-    json_data = {
-        "utente": {
-            "nome": "Sergio",
-            "età": 28
-        },
-        "hobby": ["programmazione", "anime", "gaming"]
-    }
+# if __name__ == "__main__":
+#     json_data = {
+#         "utente": {
+#             "nome": "Sergio",
+#             "età": 28
+#         },
+#         "hobby": ["programmazione", "anime", "gaming"]
+#     }
 
-    manager = JsonManager(json_data)
+#     manager = JsonManager(json_data)
 
-    # Recupero dati
-    print(manager.retrieveKey("$.utente.nome"))  # Output: "Sergio"
+#     # Recupero dati
+#     print(manager.retrieveKey("$.utente.nome"))  # Output: "Sergio"
 
-    # Aggiornamento chiave
-    manager.updateKey("$.utente.nome", "Andrea")
+#     # Aggiornamento chiave
+#     manager.updateKey("$.utente.nome", "Andrea")
 
-    print(manager.retrieveKey("$.utente.nome"))  # Output: "Andrea"
+#     print(manager.retrieveKey("$.utente.nome"))  # Output: "Andrea"
 
 # json_data = {
 #     "message_id": 22050,
@@ -181,4 +180,5 @@ if __name__ == "__main__":
 # print(x.retrieveKey("results[0][0]"))
 # x.updateKey('$.tastiera.inline_keyboard[*][*].text',"miaomiao")
 # print(x.data)
+
 
