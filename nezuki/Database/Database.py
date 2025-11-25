@@ -101,12 +101,18 @@ class Database:
             if hasattr(self, "connection") and self.connection:
                 logger.warning("Rilevata una connessione aperte in precedenza, la chiudo e avvio una nuova connessione")
                 self.connection.close()
+            else:
+                logger.info(f"Connessione MySQL non rilevata, ne creo una nuova", extra={"internal": True})
+                self.__load_configuration__()
             return mysql.connector.connect(**self.configJSONNew)
         elif self.db_type == "postgresql":
             logger.debug("Avvio connessione PostgreSQL", extra={"internal": True})
             if hasattr(self, "connection") and self.connection:
                 logger.warning("Rilevata una connessione aperte in precedenza, la chiudo e avvio una nuova connessione")
                 self.connection.close()
+            else:
+                logger.info(f"Connessione PostgreSQL non rilevata, ne creo una nuova", extra={"internal": True})
+                self.__load_configuration__()
             return psycopg.connect(**self.configJSONNew, row_factory=dict_row)
         else:
             raise ValueError(f"Tipo di Database non supportato: {self.db_type}")
@@ -119,6 +125,7 @@ class Database:
             databaseName (str): Nome del nuovo database.
         """
         self.database = databaseName
+        logger.info(f"Cambio database di connessione a: {databaseName}", extra={"internal": True})
         self.start_connection()
         
     def __load_configuration__(self):
